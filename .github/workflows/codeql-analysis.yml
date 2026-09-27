@@ -1,0 +1,75 @@
+# CodeQL static analysis. Results land in the Security tab under Code scanning.
+#
+# This was the stock 2020 starter template until 2026-08-12. It ran green for
+# years, then failed 44 consecutive runs between 2026-08-01 and 2026-08-12,
+# every push and PR, with "Resource not accessible by integration" on the
+# code-scanning status endpoint.
+#
+# The cause was not the workflow changing, which is why it looked mysterious:
+# this repository's default workflow permissions are set to `read` (see Settings
+# -> Actions -> Workflow permissions). That is the right default, but the stock
+# template declared no `permissions:` block at all, so the job's token could not
+# write the SARIF it exists to produce. The block below is the fix.
+#
+# The v1 -> v3 action bump in the same change was overdue on its own (v1 was
+# retired in January 2023) but was NOT what broke this. Do not read the bump as
+# the repair; the `permissions:` block is the repair.
+#
+# The failure mode is worth remembering: the Security tab went on showing the
+# results of the last upload that worked, dated 2026-07-31, with nothing
+# marking them stale. A scanner failing loudly in Actions still reads as a
+# scanner passing quietly if you only ever look at the Security tab.
+name: "CodeQL"
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [master]
+  schedule:
+    - cron: '41 18 * * 2'
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+
+    # Declaring this block at all drops every permission not listed to `none`,
+    # so these two are the whole set the job gets. `security-events: write` is
+    # the one that was missing and the only reason the job exists: it is what
+    # lets `analyze` upload the SARIF. `contents: read` is for the checkout.
+    # The upstream template also lists `packages: read` and `actions: read`,
+    # both needed only by private repositories. This one is public.
+    permissions:
+      security-events: write
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Python only. The SvelteKit frontend is not scanned; adding
+        # `javascript-typescript` here is a real coverage gain and a real new
+        # alert backlog, so it is a decision rather than a fix.
+        language: ['python']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+
+      # No Autobuild step. The template shipped one, but it only does anything
+      # for compiled languages (C/C++, C#, Java, Go). Python needs no build, so
+      # the step was config that could never do anything.
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          # Keeps each matrix language's results a separate analysis. Without
+          # it a second language added above would overwrite this one's alerts
+          # rather than sit alongside them.
+          category: "/language:${{ matrix.language }}"

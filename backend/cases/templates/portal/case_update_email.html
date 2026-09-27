@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <body style="font-family: Arial, Helvetica, sans-serif; color: #1f2933; line-height: 1.5">
+    <p>Hello {{ contact_name }},</p>
+
+    {% if kind == "reply" %}
+      <p>{{ author_name }} replied to your request "{{ case_name }}":</p>
+      {# Autoescaped before the line breaks are added, so a reply is shown as the text that was typed and never as markup. #}
+      <div style="margin: 0 0 16px; padding: 12px 14px; border-left: 3px solid #d1d5db; background: #f9fafb">
+        {{ reply_text|linebreaksbr }}
+      </div>
+    {% else %}
+      <p>Your request "{{ case_name }}" is now <strong>{{ case_status }}</strong>.</p>
+    {% endif %}
+
+    {% if reply_by_email %}
+      <p>You can reply to this email, and your reply will be added to the request.</p>
+    {% else %}
+      <p>Please do not reply to this email. To answer, use the support portal link below.</p>
+    {% endif %}
+
+    <p>
+      <a href="{{ link }}" style="color: #2563eb">View the request in the {{ org_name }} support portal</a>
+    </p>
+
+    <p style="color: #6b7280; font-size: 13px">
+      You will be asked to sign in, and we will email you a six digit code to do that.
+    </p>
+  </body>
+</html>

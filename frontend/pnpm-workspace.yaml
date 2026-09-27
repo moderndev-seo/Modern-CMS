@@ -1,0 +1,15 @@
+allowBuilds:
+  '@sentry/cli': true
+onlyBuiltDependencies:
+  - '@sentry/cli'
+overrides:
+  # GHSA-rgw5-rvv9-x895 (high): DoS via unbounded intermediate arrays.
+  # Only reachable through dev tooling (eslint, @sentry/vite-plugin), but the
+  # transitive parents still ask for a vulnerable range, so force the patch.
+  'brace-expansion@>=4.0.0 <5.0.9': '^5.0.9'
+  # GHSA-pxg6-pf52-xh8x (low): cookie name/path/domain accept out-of-bounds
+  # characters. Reachable at runtime, not just in dev tooling: @sveltejs/kit
+  # parses and serialises the jwt_access / jwt_refresh / org cookies through
+  # this package. Kit still asks for ^0.6.0, so force the patched line. Kit
+  # only calls parse() and serialize(), both unchanged in 0.7.
+  'cookie@<0.7.0': '^0.7.2'

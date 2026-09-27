@@ -1,0 +1,162 @@
+"""Patient journeys extend Contact; receipts never stand in for invoices."""
+
+from django.db import models
+from django.utils import timezone
+
+from common.base import BaseOrgModel
+
+SOURCES = [
+    ("google_ads", "Google Ads"),
+    ("organic_search", "Organic search"),
+    ("meta_ads", "Meta Ads"),
+    ("referral", "Referral"),
+    ("email", "Email"),
+    ("direct", "Direct"),
+    ("unknown", "Unknown"),
+]
+
+
+class Patient(BaseOrgModel):
+    contact = models.OneToOneField("contacts.Contact", on_delete=models.PROTECT)
+    lead_at = models.DateTimeField(default=timezone.now)
+    original_source = models.CharField(
+        max_length=30, choices=SOURCES, default="unknown"
+    )
+    original_campaign = models.CharField(max_length=255, blank=True)
+    original_keyword = models.CharField(max_length=255, blank=True)
+    original_landing_page = models.URLField(max_length=1000, blank=True)
+    original_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "mp_patient"
+        indexes = [models.Index(fields=["org", "-created_at"])]
+
+
+class JourneyEvent(BaseOrgModel):
+    KINDS = [
+        ("touch", "Marketing touch"),
+        ("booked", "Appointment booked"),
+        ("attended", "Appointment attended"),
+        ("consultation", "Consultation"),
+        ("treated", "Treatment completed"),
+    ]
+    patient = models.ForeignKey(
+        Patient, on_delete=models.PROTECT, related_name="events"
+    )
+    kind = models.CharField(max_length=20, choices=KINDS)
+    occurred_at = models.DateTimeField(default=timezone.now)
+    source = models.CharField(max_length=30, choices=SOURCES, default="unknown")
+    campaign = models.CharField(max_length=255, blank=True)
+    landing_page = models.URLField(max_length=1000, blank=True)
+    notes = models.TextField(blank=True, max_length=2000)
+
+    class Meta:
+        db_table = "mp_journey_event"
+        indexes = [models.Index(fields=["org", "patient", "occurred_at"])]
+
+
+class Receipt(BaseOrgModel):
+    patient = models.ForeignKey(
+        Patient, on_delete=models.PROTECT, related_name="receipts"
+    )
+    kind = models.CharField(
+        max_length=10, choices=[("payment", "Payment"), ("refund", "Refund")]
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    occurred_at = models.DateTimeField(default=timezone.now)
+    payment = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="refunds"
+    )
+    reference = models.CharField(max_length=100)
+    notes = models.TextField(blank=True, max_length=2000)
+
+    class Meta:
+        db_table = "mp_receipt"
+        indexes = [models.Index(fields=["org", "occurred_at"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="mp_receipt_positive"
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(kind="payment", payment__isnull=True)
+                    | models.Q(kind="refund", payment__isnull=False)
+                ),
+                name="mp_refund_has_payment",
+            ),
+            models.UniqueConstraint(
+                fields=["org", "reference"], name="mp_receipt_reference"
+            ),
+        ]
+
+
+class MarketingSpend(BaseOrgModel):
+    source = models.CharField(max_length=30, choices=SOURCES)
+    date = models.DateField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+
+    class Meta:
+        db_table = "mp_marketing_spend"
+        indexes = [models.Index(fields=["org", "date"])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "source", "date"], name="mp_daily_spend"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(amount__gte=0), name="mp_spend_nonnegative"
+            ),
+        ]
+
+
+class Appointment(BaseOrgModel):
+    STATUSES = [
+        (value, value.replace("_", " ").title())
+        for value in ("scheduled", "attended", "cancelled", "no_show")
+    ]
+    patient = models.ForeignKey(
+        Patient, on_delete=models.PROTECT, related_name="appointments"
+    )
+    request_id = models.UUIDField()
+    title = models.CharField(max_length=200)
+    location = models.CharField(max_length=200, blank=True)
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=STATUSES, default="scheduled")
+    revision = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        db_table = "mp_appointment"
+        indexes = [models.Index(fields=["org", "patient", "starts_at"])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_appointment_request"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(ends_at__gt=models.F("starts_at")),
+                name="mp_appointment_order",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    status__in=["scheduled", "attended", "cancelled", "no_show"]
+                ),
+                name="mp_appointment_status",
+            ),
+        ]
+
+
+class AppointmentChange(BaseOrgModel):
+    appointment = models.ForeignKey(
+        Appointment, on_delete=models.PROTECT, related_name="changes"
+    )
+    action = models.CharField(max_length=20)
+    reason = models.CharField(max_length=1000)
+    before = models.JSONField(default=dict)
+    after = models.JSONField(default=dict)
+    journey_event = models.OneToOneField(
+        JourneyEvent, null=True, blank=True, on_delete=models.PROTECT
+    )
+
+    class Meta:
+        db_table = "mp_appointment_change"
+        ordering = ["created_at", "id"]
+        indexes = [models.Index(fields=["org", "appointment", "created_at"])]
