@@ -54,6 +54,8 @@ This is an in-progress development project. Attendance corrections, financial co
 
 ## Working as a team
 
+For current progress, limitations and the next proposed increment, read the [project handoff](docs/modern-practice/PROJECT_STATE.md). [AGENTS.md](AGENTS.md) directs new coding sessions to that handoff. Keep it updated with each completed increment so development can continue without the original chat.
+
 Clone this repository and create a branch for each change. Submit pull requests and review changes before merging. Each developer gets their own local database and fictional seed records; Git does not synchronize databases or turn this into a shared hosted application.
 
 Do not commit `.env` files, actual patient data, database exports, credentials, internal reference PDFs, or executive decks. Public handoff snapshots exclude those files and the old local Git history that contains internal artifacts. Original source code, migrations, tests, assets, dependency lockfiles and license notices are included.
