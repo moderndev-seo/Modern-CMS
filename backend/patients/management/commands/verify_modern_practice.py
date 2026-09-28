@@ -69,6 +69,28 @@ class Command(BaseCommand):
             other = "cedar" if key == "harbor" else "harbor"
             other_patient = demo_id(other + ":alex")
             attempts = [
+                session.post(
+                    f"{root}{other_patient}/billing/matches/", json={}, timeout=90
+                ),
+                session.post(
+                    f"{root}{demo_id(key + ':alex')}/billing/matches/",
+                    json={
+                        "receipt": str(demo_id(key + ":alex:payment")),
+                        "invoice_payment": str(demo_id(other + ":billing:payment")),
+                        "reason": "MUST-BE-REJECTED foreign invoice payment",
+                    },
+                    timeout=90,
+                ),
+                session.post(
+                    f"{root}{demo_id(key + ':alex')}/billing/matches/",
+                    json={
+                        "receipt": str(demo_id(other + ":alex:payment")),
+                        "invoice_payment": str(demo_id(key + ":billing:payment")),
+                        "reason": "MUST-BE-REJECTED foreign receipt",
+                    },
+                    timeout=90,
+                ),
+                session.get(f"{root}{other_patient}/billing/", timeout=90),
                 session.get(f"{root}{other_patient}/", timeout=90),
                 session.get(f"{root}{other_patient}/events/", timeout=90),
                 session.get(f"{root}{other_patient}/receipts/", timeout=90),
@@ -102,7 +124,7 @@ class Command(BaseCommand):
                     timeout=90,
                 ),
             ]
-            if [r.status_code for r in attempts] != [404, 404, 404, 404, 404, 400, 404]:
+            if [r.status_code for r in attempts] != [404] * 9 + [400, 404]:
                 raise CommandError(
                     f"Cross-practice checks failed: {[r.status_code for r in attempts]}"
                 )
@@ -112,7 +134,7 @@ class Command(BaseCommand):
                 "growth": growth,
             }
             self.stdout.write(
-                f"{org.name}: 3 leads, 2 booked, 1 treated; net USD {expected}; 7 direct HTTP isolation checks passed."
+                f"{org.name}: 3 leads, 2 booked, 1 treated; net USD {expected}; 11 direct HTTP isolation checks passed."
             )
             if options["frontend_url"]:
                 front = requests.Session()
@@ -128,6 +150,10 @@ class Command(BaseCommand):
                     ),
                     ("/patients/new", "Create patient journey"),
                     (
+                        f"/patients/{demo_id(key + ':alex')}/billing",
+                        "Patient collections",
+                    ),
+                    (
                         f"/patients/{demo_id(key + ':alex')}/appointments",
                         "Scheduled times and outcomes",
                     ),
@@ -141,7 +167,7 @@ class Command(BaseCommand):
                             f"Frontend page {path} failed: HTTP {page.status_code}"
                         )
                 self.stdout.write(
-                    "Six authenticated frontend routes rendered successfully over HTTP."
+                    "Seven authenticated frontend routes rendered successfully over HTTP."
                 )
         appointment_checks = 0
         for key, session in sessions.items():

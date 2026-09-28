@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Count, Q, Sum
+from django.db.models.deletion import ProtectedError
 from django.http import HttpResponse
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -827,7 +828,16 @@ class PaymentDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        payment.delete()
+        try:
+            payment.delete()
+        except ProtectedError:
+            return Response(
+                {
+                    "error": True,
+                    "message": "This payment is retained by a patient match and cannot be deleted.",
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
         return Response(
             {"error": False, "message": "Payment deleted"},
             status=status.HTTP_200_OK,

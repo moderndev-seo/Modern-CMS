@@ -109,3 +109,62 @@ Recorded-attendance corrections need rules for superseding historical events and
 - Browser: reopened the saved fictional cancelled appointment, confirmed Scheduled/version 4, and inspected the new Reopened entry alongside all three previous entries. The demo remains saved for the team to inspect.
 - An initial test invocation omitted the isolated database name and stopped at setup; rerunning with `DBNAME=mp_milestone` used the existing test database. A live smoke run was interrupted by the development server reloading the history-ordering edit; this was a transient verification interruption.
 - Final live HTTP verification passed: Harbor $1,100 and Cedar $700 net collected; 14 journey isolation checks plus seven appointment isolation checks, including a forbidden foreign-appointment reopening; 12 authenticated frontend routes rendered successfully. The changed appointment page passed ESLint, and `git diff --check` passed.
+
+
+## Fifth increment: patient billing review (read-only)
+
+Administrators can open **Billing review** from a patient journey. The screen compares two separate sets of records: patient receipts (payments, refunds and net collected, in USD) and existing invoices linked to that patient's Contact. It does not match, allocate, import, alter, or duplicate money records. No schema migration was necessary: this reuses Invoice, Payment, Patient, Receipt, existing administrator permissions and Contact relationships.
+
+The explicit requirements are to preserve practice permissions/RLS, preserve existing records, and keep received payments/refunds separate from invoice values. A read-only administrator review, all-recorded-dates scope, and currency-separated invoice summaries are implementation choices. This is the first part of invoice reconciliation, not a completed reconciliation workflow.
+
+Billed totals include Sent, Viewed, Partially Paid, Overdue and Paid invoices. Draft, Pending and Cancelled invoices are listed but excluded from billed totals. Invoice payment entries are summed from Payment rows across all invoice statuses. Each currency remains separate; no currency conversion is attempted. The patient receipts panel remains USD under the existing milestone-one rule. The screen does not subtract patient receipts from invoices to imply a reconciled balance.
+
+Invoice rows show their total, actual invoice Payment entry sum, stored paid and stored due values. A disagreement between Payment entry sums and stored paid is flagged for review without repairing records. These are invoice-ledger figures, not proof that a payment matches a patient receipt. Invoices are linked through the exact Contact within the current practice; names/emails are not used to infer relationships. The list is paginated at 20 rows, and currency totals cover all pages.
+
+`GET /api/patients/{patient_id}/billing/` requires an active practice administrator and contact access. It explicitly scopes invoices, payments, receipts and patient to that practice. There are no write methods or caller-selected contact/invoice links. Unsupported writes return 405. Non-admin members receive 403; foreign patient URLs return 404. Existing billing pages remain accessible through each invoice link.
+
+### Try it
+
+1. Select **TEST - Harbor Spine & Ortho (fictional)** at http://localhost:5181/org.
+2. Open http://localhost:5181/patients/a29def23-7510-5894-9778-61392bbfe46f/billing as a practice administrator.
+3. Review USD 1,200 payments, USD 100 refunds and USD 1,100 net collected. The existing seed has no invoice linked to Alex, so that panel correctly shows an empty state. No invoices or money records were added for this browser check.
+4. Existing invoices whose Bill To contact is this patient's exact Contact appear here automatically. Creating/editing invoices remains the existing CRM workflow; recording a payment there does not create a Growth receipt.
+
+### Validation and remaining work
+
+All 28 patient-app PostgreSQL tests passed, including three new billing tests for currency/status calculations, invoice-ledger mismatch detection, unchanged Growth and stored financial values, admin-only access, foreign-practice rejection, ignored scope-forging parameters, read-only methods, and pagination with all-page totals. Existing RLS and cross-practice relationship tests also passed. One existing Django email-settings deprecation warning remains. Ruff checks passed and migration drift check found no changes.
+
+The signed-in desktop browser rendered the receipt totals and empty-invoice state correctly. Populated invoice calculations were exercised in the PostgreSQL test database; no populated invoice browser walkthrough was performed. No fresh production build, container restart, load test or full accessibility audit was performed for this increment.
+
+Receipt-to-invoice matching/allocation, duplicate-payment resolution, reconciled patient balances, financial corrections and attendance corrections remain unfinished. This increment makes the existing records visible together without pretending these workflows are complete. Nothing was deployed. This billing review is included in the subsequent payment-matching GitHub update.
+
+Final live HTTP check for the fifth increment: Harbor $1,100 and Cedar $700 net collected remained unchanged; 16 journey/billing isolation checks and seven appointment isolation checks passed; 14 authenticated pages rendered, including both billing-review pages. No successful writes were performed by this check.
+
+Frontend validation: Svelte check completed with 0 errors and 0 warnings. Changed routes passed ESLint; a missing currency-list key warning was corrected and the page rechecked. `git diff --check` passed.
+
+
+## Sixth increment: explicit payment matching
+
+Administrators can match one existing patient payment receipt to one existing invoice payment for the same patient/contact and practice. Both must have the same USD amount; the invoice must be issued and not cancelled. A required reason records the evidence the administrator reviewed. Equal amounts do not prove identity: dates and references must be checked by the person recording the match. This is bookkeeping metadata; it never creates a receipt, payment, refund, or money transfer, changes original attribution, or adds invoice amounts to Growth.
+
+The new `PaymentMatch` table is necessary to retain this relationship, actor, timestamp, reason and a snapshot of the original matching facts independently of the two ledgers. Both references are unique, preventing reuse of either side. Migration `0004_payment_matches` adds forced PostgreSQL RLS, database checks for equal USD amounts and same patient/practice, and an append-only constraint. PostgreSQL generates the snapshot from stored records. Existing records are preserved. Attempts to delete matched invoice payments return a conflict; the references are protected. Changed underlying facts are flagged as Needs review on the billing screen rather than silently repairing financial data.
+
+The explicit requirements are tenant isolation, protected attribution and accurate collected revenue. One-to-one equal-amount matching, administrator-only access, USD-only scope and permanent match history are implementation choices. This is not complete allocation/reconciliation: refunds remain separate; split payments, currency conversion, match reversal/reassignment, and reconciled patient balances are unfinished. The UI shows the latest 100 eligible entries from each ledger and latest 100 matches, with total counts. Larger-history searching/pagination is not implemented. Matching does not verify bank settlement or prevent somebody recording duplicate money through the separate existing ledger workflows.
+
+`POST /api/patients/{patient_id}/billing/matches/` accepts only receipt ID, invoice-payment ID and reason. Tenant/contact checks run on the server. Matching the same pair again is idempotent; trying to reuse either side for another match returns 409. Foreign or wrong-patient links are rejected. Receipt refunds are not eligible for matching. A refund recorded after a match reduces collected revenue normally and does not rewrite the original payment match.
+
+### Fictional billing demo
+
+After the base seed, optionally run `docker compose exec backend python manage.py seed_modern_practice_billing`. It adds one clearly fictional invoice, line item, account and invoice payment to each TEST practice for the existing Alex payment. It sends nothing, charges nothing, adds no patient receipt, and does not create matches automatically. Reruns leave existing records unchanged. Existing invoice records are reused through the established models/calculations. The invoice payment is a counterpart of the already-recorded fictional receipt; adding it does not increase Growth revenue.
+
+Open the Harbor Alex billing review and choose the existing patient receipt and the invoice payment under **Match existing payments**. Check the amount, dates and references, enter a fictional demonstration reason, and confirm. The history retains the match while both eligible-choice counts decrease. This match is permanent in this increment; do not use real patient records for the demo.
+
+### Validation
+
+The 32-test PostgreSQL patient suite passed, including four matching tests for unchanged cash/Growth, retries, duplicates, permission checks, foreign links, amount/currency/status validation, refunds, drift detection, forced RLS and append-only history. After adding the demo command and payment-deletion protection test, all five matching tests passed. The latter verifies seed reruns preserve records and deleting a matched invoice payment returns 409. One existing Django email-settings deprecation warning remains.
+
+Svelte check passed with 0 errors and 0 warnings; changed matching routes passed ESLint. Production build, load/concurrent-request stress tests and a full accessibility audit were not repeated. Attendance corrections and broader financial corrections remain separate unfinished work.
+
+The live migration was confirmed applied. The fictional billing seed was run twice: first run added counterparts in both TEST practices; the second left them unchanged. In the signed-in browser, Harbor's USD 1,200 receipt was matched to TEST-HARBOR-MATCH after reviewing its reference/date/amount. The history showed one match, both unmatched counts became zero, and net collected stayed USD 1,100 after the existing USD 100 refund. Cedar remains available for an unmatched demonstration. No live charge or communication occurred. Matching persistence was verified by reloading the page; a further post-match container restart was not performed.
+
+Final live HTTP verification after matching passed: both demo revenue totals unchanged; 22 journey/billing/matching isolation rejections plus seven appointment rejections; 14 authenticated pages rendered. The first expanded smoke run exposed an outdated expected-status list in the verification command; the expected list was corrected and the full live check passed. Django system checks and migration drift checks passed.

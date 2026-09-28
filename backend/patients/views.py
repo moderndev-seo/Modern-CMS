@@ -150,6 +150,7 @@ class PatientDetail(PracticeView):
         )
         data["followups"] = FollowupSerializer(followups[:50], many=True).data
         data["followup_count"] = followups.count()
+        data["can_review_billing"] = is_org_admin(request.profile)
         data["can_create_followup"] = has_contact_access(
             request.profile, patient.contact
         )

@@ -66,6 +66,9 @@
 <svelte:head><title>{patient.name} | Modern Practice</title></svelte:head>
 <div class="mp-page">
   <div class="mp-patient-links">
+    {#if patient.can_review_billing}<a
+        href={resolve(asInternalPath(`/patients/${patient.id}/billing`))}>Billing review →</a
+      >{/if}
     <a href={resolve('/patients')}>← Patients</a>
     {#if patient.can_create_followup}<a
         class="mp-button secondary"

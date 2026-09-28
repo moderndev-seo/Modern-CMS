@@ -160,3 +160,20 @@ class AppointmentChange(BaseOrgModel):
         db_table = "mp_appointment_change"
         ordering = ["created_at", "id"]
         indexes = [models.Index(fields=["org", "appointment", "created_at"])]
+
+
+class PaymentMatch(BaseOrgModel):
+    """Immutable evidence that two existing records represented the same payment."""
+
+    receipt = models.OneToOneField(
+        Receipt, on_delete=models.PROTECT, related_name="invoice_match"
+    )
+    invoice_payment = models.OneToOneField(
+        "invoices.Payment", on_delete=models.PROTECT, related_name="patient_match"
+    )
+    reason = models.CharField(max_length=1000)
+    snapshot = models.JSONField(default=dict)
+
+    class Meta:
+        db_table = "mp_payment_match"
+        ordering = ["created_at", "id"]

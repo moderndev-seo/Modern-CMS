@@ -39,6 +39,7 @@ Open **http://localhost:5181/login**, enter **admin@localhost**, and request a s
 - Patient follow-up tasks using the existing CRM task model.
 - Booking, rescheduling, cancellation, attendance and no-shows with change history.
 - Administrator reopening of cancellations/no-shows without duplicating booking events.
+- Patient billing review with separate receipt totals and invoice ledgers by currency, plus explicit administrator matching of equal USD payment records. Split allocations, refunds reconciliation and match reversal remain unfinished.
 - Practice permissions, PostgreSQL RLS and cross-practice relationship checks.
 
 Existing CRM tools remain accessible. The inherited Flutter app is included as upstream source; Modern Practice's new screens are implemented in the web app, not in that mobile client.

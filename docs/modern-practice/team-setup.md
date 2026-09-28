@@ -69,3 +69,7 @@ If `test_mp_milestone` already exists, skip `createdb`. Django prefixes `mp_mile
 Use branches and pull requests. Run focused tests for reporting/permission changes and preserve forced RLS and organization checks. Do not silently change first-touch attribution or replace collected revenue with invoice values. Keep unfinished modules clearly marked.
 
 The public snapshot keeps upstream license notices. Internal reference documents, executive decks, local secrets, database contents, caches and generated builds are omitted. Upstream automatic release workflows are moved out of `.github/workflows` into `docs/upstream-workflows/` in the handoff so importing the project does not publish upstream packages. CI remains available; release configuration requires a separate deliberate decision.
+
+## Optional payment-matching demo
+
+After the base seed, run `docker compose exec backend python manage.py seed_modern_practice_billing`. This adds fictional invoice-payment counterparts in the two TEST practices without adding receipts or changing Growth. It is safe to rerun and does not create matches automatically. Open a patient journey → Billing review and verify the matching pair before confirming. Matching requires an administrator, equal USD amounts and a reason. Matches cannot currently be undone; use fictional records only for this rehearsal. Run `docker compose up --build -d` after pulling this update so backend startup applies migration `patients.0004_payment_matches`.

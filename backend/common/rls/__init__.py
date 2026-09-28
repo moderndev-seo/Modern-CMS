@@ -37,6 +37,7 @@ ORG_SCOPED_TABLES = [
     "mp_appointment_change",
     "mp_journey_event",
     "mp_receipt",
+    "mp_payment_match",
     "mp_marketing_spend",
     # Core business entities
     "lead",
