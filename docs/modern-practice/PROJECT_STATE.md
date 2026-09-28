@@ -1,6 +1,6 @@
 # Modern Practice CRM — project handoff
 
-Updated: September 28, 2026. Latest implemented feature baseline: `29678d33e5bf8f9a60ecd91f7e156db07c24adc1` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). Later documentation commits do not change that feature baseline. Verify the current branch before continuing.
+Updated: September 28, 2026. Prior published feature baseline: `29678d33e5bf8f9a60ecd91f7e156db07c24adc1` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). This handoff accompanies the seventh increment, audited match reversal; consult Git history for its publishing commit. Verify the current branch before continuing.
 
 ## Objective and explicit requirements
 
@@ -18,7 +18,7 @@ Standing scope: no live advertising, messaging, review or payment integrations; 
 | --- | --- |
 | Milestone 1: patient journey and Growth | Implemented and tested; not a claim of production readiness |
 | Milestone 2: usability and demo acceptance preparation | Implemented; team acceptance remains a human activity |
-| Milestone 3: practice operations | In progress; six increments delivered below |
+| Milestone 3: practice operations | In progress; seven increments delivered below |
 | Production rollout and live integrations | Not implemented or authorized by the continuation instruction |
 
 Milestone 1 uses existing Contact identity with a Patient relationship, immutable first-touch attribution, separate touches, journey events, payment/refund receipts, and chronological activity. Growth counts leads and distinct booked/treated patients, sums net receipt cash, and credits revenue to original source. Selected date ranges are UTC days, inclusive start through exclusive start of the day after end; cash uses receipt date. Unknown remains explicit. Missing spend is unavailable, and zero spend does not yield infinite ROAS. Current receipt currency is USD. Existing CRM remains reachable; Messages and Reviews are planned.
@@ -34,28 +34,34 @@ Milestone 3 delivered:
 5. Administrator billing review, keeping USD patient receipts and invoice ledgers by currency separate; stored invoice/payment disagreements are flagged.
 6. Administrator matching of one existing payment receipt to one equal USD invoice payment for the same patient/contact/practice. Migration `0004_payment_matches` stores actor, reason and a database-generated snapshot with forced RLS, unique references and append-only protection. Same-pair retry is idempotent; reuse conflicts and foreign links are rejected. Matching never changes Growth or moves money. Changed underlying facts show Needs review. Matched invoice-payment deletion is rejected.
 
-Implementation choices (not additional user requirements): USD-only receipt reporting; first-touch revenue attribution; administrator-only billing matching; one-to-one equal-amount matches; permanent match history; UTC scheduling; reuse of Contact, Task, Invoice and Payment. Explain changes to these choices before implementing them.
+7. Audited match reversal: administrators record a required reason, actor and timestamp in a separate append-only table. A database trigger releases the original pair atomically; partial unique constraints permit only one active match per record. Matching again creates a new history entry. Old reversal retries cannot reverse a newer match. Migration `0005` preserves existing matches and is deliberately irreversible to protect audit history.
+
+Implementation choices (not additional user requirements): USD-only receipt reporting; first-touch revenue attribution; administrator-only billing matching; one-to-one equal-amount matches; permanent match and reversal history; UTC scheduling; reuse of Contact, Task, Invoice and Payment. Explain changes to these choices before implementing them.
 
 ## Next work and remaining limitations
 
-**Recommended next increment, not an already approved detailed design:** add audited correction of mistaken payment matches, preserving the original history and tenant protections. Inspect the current append-only database trigger first; do not simply delete or edit matches. Define reversal/reassignment behavior, retries and permission tests before broadening allocation.
+**Recommended next increment, not an already approved detailed design:** define and implement receipt/refund allocation toward reconciled patient balances. Inspect both existing ledgers first; retain explicit matching and audit history, and never count invoice values as new collected cash. Split allocations and refund behavior need clear rules and focused permission/calculation tests before implementation.
 
 Remaining backlog, with order and detailed design still proposals:
 
-- Financial workflow: match reversal/reassignment, split allocations, refund reconciliation, duplicate-payment resolution and reconciled patient balances. Matching does not verify bank settlement or prevent duplicate money entry through independent existing ledgers. Matching currently exposes the latest 100 eligible entries per ledger and 100 matches, with counts; larger-history search/pagination remains unfinished.
+- Financial workflow: split allocations, refund reconciliation, duplicate-payment resolution and reconciled patient balances. Matching does not verify bank settlement or prevent duplicate money entry through independent existing ledgers. Matching currently exposes the latest 100 eligible entries per ledger and 100 matches, with counts; larger-history search/pagination remains unfinished.
 - Appointment operations: corrections to attended events, provider/room availability, practice timezone settings, calendar connections and reminders. Existing conflict checks concern the patient, not provider/room capacity.
 - Team acceptance and hardening: complete team walkthrough, repeat current production build/restart verification, accessibility review, concurrent-request/load testing, and production/security/privacy readiness work. This CRM is not an EHR or a completed healthcare compliance program.
 - Planned product areas: Messages and Reviews and any live service integration need their own scoped implementation and authorization. Do not infer authorization to connect services or deploy from “continue.”
 
-No feature implementation was left half-written at the latest feature checkpoint. The original working folder has many uncommitted files because publication used a separate sanitized Git history; see the publishing warning below.
+The seventh increment is implemented; verification evidence is recorded below. No partial feature implementation remains. The original working folder has many uncommitted files because publication used a separate sanitized Git history; see the publishing warning below.
 
 ## Verification evidence at the latest feature checkpoint
 
-- PostgreSQL patient suite: 32 tests passed before the final seed/deletion test was added; afterward all 5 matching tests passed. Six existing invoice payment-detail regression tests passed. Do not claim a full 33-test rerun occurred.
-- Live verification: 29 cross-practice rejection checks (22 journey/billing/matching plus 7 appointments), 14 authenticated pages, and both demo revenue totals passed after matching.
-- Svelte check: 0 errors, 0 warnings. Changed routes passed ESLint. Ruff, formatting, Django system checks, migration drift checks and whitespace checks passed. Patient migration `0004` was confirmed applied locally.
-- Browser: populated Harbor invoice review, successful payment match and reload persistence verified. Receipt cash remained unchanged after matching.
-- Earlier increments verified normal container restart persistence. A further restart after the latest match, a fresh production build, concurrent-request stress tests and a full accessibility audit were **not** performed for the matching increment. One Django email-settings deprecation warning remains.
+- All 37 PostgreSQL patient tests passed, including four new reversal tests: retry/rematching, retained history, unchanged cash/Growth, permissions and input validation, wrong-patient/foreign links, forced RLS, database bypass rejection, rollback, drift and reassignment. One existing Django email-settings deprecation warning remains.
+- Live verification: 33 cross-practice rejection checks (22 journey/billing/matching, 4 reversal, 7 appointment), 14 authenticated pages, and both demo revenue totals passed after the correction rehearsal.
+- Svelte check: 0 errors, 0 warnings. Changed routes passed ESLint. Ruff, Django system checks, migration drift checks and whitespace checks passed. Migration `0005` was applied locally.
+- Browser: Harbor reversal released both records; rematching created a second entry while preserving the reversal and original facts. Net collections remained $1,100. Cedar remains unmatched. A temporary backend connection failure interrupted the first attempt during development reload; the completed walkthrough succeeded after recovery.
+- No concurrent-request stress test or full accessibility audit was performed for this increment.
+
+Restart persistence verified for the seventh increment: PostgreSQL, Redis, backend and both Celery services restarted normally, and hashes across 33 model/organization groups in all three organizations were identical. This includes the original organization, contacts, tasks, patients, journey events, receipts, invoices/payments, appointments/history, matches and reversals. No volume was removed.
+
+Production build (`npm run build`) completed successfully, including the Node adapter. It reported an empty generated env chunk and slow plugin timings; no build error occurred. The post-restart HTTP check was initially attempted before backend startup completed, then rerun after readiness.
 
 Detailed historical evidence is in [milestone one](milestone-one.md), [milestone two](milestone-two.md) and [milestone three](milestone-three.md). Earlier milestone sections describe earlier states; the sixth increment supersedes the read-only billing description.
 
@@ -67,7 +73,7 @@ Base demo: `docker compose exec backend python manage.py seed_modern_practice --
 
 Select a TEST practice at http://localhost:5181/org. For September 1–30, 2026, both seeds have 3 leads, 2 booked patients and 1 treated patient. Harbor net collected is $1,100 ($1,200 payment less $100 refund), with Google Ads source ROAS 5.50 on $200 spend. Cedar net collected is $700, with Google Ads ROAS 3.50. Overall ROAS can remain unavailable because another source lacks spend. Later manual demo records may change counts; do not reset them to match these seed values.
 
-Local demo checkpoint: Harbor Alex has one persisted payment match and no eligible unmatched pair; Cedar Alex remains available for a matching demo. These manual actions are not reproduced by cloning GitHub or rerunning the seed. Harbor also has a completed demo follow-up and a reopened scheduled appointment. The original organization and records remain preserved.
+Local demo checkpoint: Harbor Alex has two persisted match entries (one reversed, one active), one reversal audit entry, and no eligible unmatched pair; Cedar Alex remains available for a matching demo. These manual actions are not reproduced by cloning GitHub or rerunning the seed. Harbor also has a completed demo follow-up and a reopened scheduled appointment. The original organization and records remain preserved.
 
 - Patients: http://localhost:5181/patients
 - Growth: http://localhost:5181/growth?start=2026-09-01&end=2026-09-30
@@ -89,3 +95,5 @@ Open this project folder (or a current clone) and say:
 > Read AGENTS.md and docs/modern-practice/PROJECT_STATE.md. Verify the repository and runtime state, then continue the next unfinished milestone. Preserve the recorded constraints, distinguish proposed work from requirements, update the handoff, and push verified changes to GitHub.
 
 This is durable project context, not a saved transcript or a guarantee that every unrecorded conversation detail survives. If interrupted, record the partial work, outstanding checks and exact next action here before handing off when possible.
+
+Final post-restart HTTP verification passed: 33 isolation rejections, 14 authenticated pages, unchanged revenue and identical demo snapshot hash. The frontend was also restarted after its successful build.

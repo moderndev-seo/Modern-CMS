@@ -7,6 +7,14 @@ export async function load(event) {
 }
 
 export const actions = {
+  reverse: async (event) => {
+    const result = await writePractice(event, `${event.params.id}/billing/reversals/`, [
+      'match',
+      'reason'
+    ]);
+    if ('success' in result) redirect(303, `/patients/${event.params.id}/billing?reversed=1`);
+    return result;
+  },
   match: async (event) => {
     const result = await writePractice(event, `${event.params.id}/billing/matches/`, [
       'receipt',

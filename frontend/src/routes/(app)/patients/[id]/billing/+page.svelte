@@ -71,7 +71,8 @@
       <p class="mp-muted">
         Showing up to the 100 most recent eligible entries from each ledger. Unmatched receipts: {billing
           .matching.receipt_count}; unmatched invoice payments: {billing.matching.payment_count}.
-        Match history is permanent; undo/reassignment is not available yet.
+        Match history is permanent. Reverse a mistaken match below before matching its records
+        again.
       </p>
       {#if billing.matching.receipts.length && billing.matching.invoice_payments.length}
         <label
@@ -105,7 +106,7 @@
             rows="3"
             required
             maxlength="1000"
-            value={form?.values?.reason || ''}></textarea></label
+            value={form?.action === 'matches' ? form?.values?.reason || '' : ''}></textarea></label
         >
         <button class="mp-button">Confirm payment match</button>
       {:else}<p>
@@ -128,11 +129,42 @@
           <p>{match.reason}</p>
           <a href={resolve(asInternalPath(`/invoices/${match.invoice}`))}>View matched invoice →</a>
           <p class="mp-muted">{dateTime(match.at)} · {match.actor}</p>
-          <p>
-            {match.consistent
-              ? 'Matched records still agree.'
-              : 'Needs review: an underlying record changed after matching. No automatic correction was made.'}
-          </p>
+          {#if match.reversal}
+            <p>
+              <strong>Reversed</strong> · {dateTime(match.reversal.at)} · {match.reversal.actor}
+            </p>
+            <p>{match.reversal.reason}</p>
+            <p class="mp-muted">
+              Historical match only. The records may have been matched again below a newer history
+              entry.
+            </p>
+          {:else}
+            <p>
+              <strong>Active match</strong> · {match.consistent
+                ? 'Matched records still agree.'
+                : 'Needs review: an underlying record changed after matching. No automatic correction was made.'}
+            </p>
+            <details open={form?.values?.match === match.id}>
+              <summary>Correct this match</summary>
+              <form class="mp-form" method="POST" action="?/reverse">
+                <input type="hidden" name="match" value={match.id} />
+                <p>
+                  Reversing releases both records for matching again. It keeps the original history
+                  and does not refund money, delete payments, or change Growth.
+                </p>
+                <label
+                  >Reason for reversal<textarea
+                    name="reason"
+                    rows="2"
+                    required
+                    maxlength="1000"
+                    value={form?.values?.match === match.id ? form?.values?.reason || '' : ''}
+                  ></textarea></label
+                >
+                <button class="mp-button">Confirm match reversal</button>
+              </form>
+            </details>
+          {/if}
         </article>{:else}<p>No matches recorded.</p>{/each}
     </div>
   </section>

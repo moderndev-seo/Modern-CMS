@@ -73,15 +73,25 @@ class PatientBilling(PracticeView):
                 org=org, receipt__patient=patient, receipt__org=org
             )
             .select_related(
-                "receipt__patient", "invoice_payment__invoice", "created_by"
+                "receipt__patient",
+                "invoice_payment__invoice",
+                "created_by",
+                "reversal__created_by",
             )
             .order_by("-created_at", "id")
         )
-        receipt_choices = Receipt.objects.filter(
-            org=org, patient=patient, kind="payment", invoice_match__isnull=True
-        ).order_by("-occurred_at", "id")
+        receipt_choices = (
+            Receipt.objects.filter(org=org, patient=patient, kind="payment")
+            .exclude(pk__in=matches.filter(active=True).values("receipt_id"))
+            .order_by("-occurred_at", "id")
+        )
         payment_choices = (
-            payments.filter(invoice__currency="USD", patient_match__isnull=True)
+            payments.filter(invoice__currency="USD")
+            .exclude(
+                pk__in=PaymentMatch.objects.filter(org=org, active=True).values(
+                    "invoice_payment_id"
+                )
+            )
             .exclude(invoice__status__in=["Draft", "Pending", "Cancelled"])
             .select_related("invoice")
             .order_by("-payment_date", "id")
@@ -126,7 +136,19 @@ class PatientBilling(PracticeView):
                             "actor": m.created_by.email
                             if m.created_by
                             else "Not recorded",
-                            "consistent": matches_current_records(m),
+                            "active": m.active,
+                            "consistent": matches_current_records(m)
+                            if m.active
+                            else None,
+                            "reversal": {
+                                "reason": m.reversal.reason,
+                                "at": m.reversal.created_at,
+                                "actor": m.reversal.created_by.email
+                                if m.reversal.created_by
+                                else "Not recorded",
+                            }
+                            if hasattr(m, "reversal")
+                            else None,
                         }
                         for m in matches[:100]
                     ],

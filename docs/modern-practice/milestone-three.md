@@ -168,3 +168,28 @@ Svelte check passed with 0 errors and 0 warnings; changed matching routes passed
 The live migration was confirmed applied. The fictional billing seed was run twice: first run added counterparts in both TEST practices; the second left them unchanged. In the signed-in browser, Harbor's USD 1,200 receipt was matched to TEST-HARBOR-MATCH after reviewing its reference/date/amount. The history showed one match, both unmatched counts became zero, and net collected stayed USD 1,100 after the existing USD 100 refund. Cedar remains available for an unmatched demonstration. No live charge or communication occurred. Matching persistence was verified by reloading the page; a further post-match container restart was not performed.
 
 Final live HTTP verification after matching passed: both demo revenue totals unchanged; 22 journey/billing/matching isolation rejections plus seven appointment rejections; 14 authenticated pages rendered. The first expanded smoke run exposed an outdated expected-status list in the verification command; the expected list was corrected and the full live check passed. Django system checks and migration drift checks passed.
+
+
+## Seventh increment: audited match reversal
+
+Administrators can correct a mistaken payment match from Billing review → Correct this match. A required reason, administrator and timestamp are stored in a new `PaymentMatchReversal` record. The original match facts remain immutable. PostgreSQL validates the same-practice relationship, enforces append-only reversal history and atomically clears only the original match's active flag. Partial unique constraints keep at most one active match for each receipt and invoice payment. Existing matches start active; no financial rows are replaced.
+
+The released records can be matched again using the existing equal-USD validation. That creates a new match entry, including when the same pair is selected again. Reversing an old match again returns its original reversal and never reverses a newer match. Reversal also works when the original matching facts have drifted; a subsequent match must meet current validation. Historical invoice-payment references stay protected from deletion.
+
+Tenant isolation, accurate collected revenue and preservation of existing records are explicit requirements. Administrator-only two-step reversal then rematching, separate immutable correction evidence and retaining deletion protection for historical matches are implementation choices. Reversal is bookkeeping: it does not issue a refund, change either ledger, change attribution or change Growth. Reassignment is not an atomic swap; another administrator could match released records before the next action, so normal uniqueness checks still apply.
+
+`POST /api/patients/{patient_id}/billing/reversals/` accepts only `match` and `reason`. Migration `0005_payment_match_reversals` adds the audit table, forced RLS and database guards. It is deliberately irreversible because dropping correction history would erase audit evidence. Normal application upgrades run it through the existing backend startup migration step. No services were connected or deployed.
+
+### Verification
+
+All 37 PostgreSQL patient tests passed, including four new tests covering reversal/retry/rematching, unchanged Growth/cash, retained history, administrator permissions, wrong-patient and foreign-practice links, strict inputs, forced RLS, direct database bypass attempts, transaction rollback and reassignment after drift. Ruff and migration drift checks passed; Django system check found no issues. Svelte check reported 0 errors and 0 warnings, and the changed billing routes passed ESLint. One existing Django email-settings deprecation warning remains.
+
+The browser verified the Harbor fictional reversal and rematch: unmatched counts went from zero to one and back to zero, history now has one reversed match and one active match, and collections remained $1,200 received less $100 refunded = $1,100 net. Cedar remains available for a new matching demo. An initial browser attempt encountered a temporary backend connection failure during development reload; the completed walkthrough succeeded after service recovery.
+
+Split allocations, refund reconciliation, reconciled balances and history beyond the latest 100 entries remain unfinished. No concurrent-request stress test or full accessibility audit was performed.
+
+Restart persistence verified for the seventh increment: PostgreSQL, Redis, backend and both Celery services restarted normally, and hashes across 33 model/organization groups in all three organizations were identical. This includes the original organization, contacts, tasks, patients, journey events, receipts, invoices/payments, appointments/history, matches and reversals. No volume was removed.
+
+Production build (`npm run build`) completed successfully, including the Node adapter. It reported an empty generated env chunk and slow plugin timings; no build error occurred. The post-restart HTTP check was initially attempted before backend startup completed, then rerun after readiness.
+
+Final post-restart HTTP verification passed: 33 isolation rejections, 14 authenticated pages, unchanged revenue and identical demo snapshot hash. The frontend was also restarted after its successful build.

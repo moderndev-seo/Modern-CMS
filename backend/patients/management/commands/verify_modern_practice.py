@@ -169,6 +169,44 @@ class Command(BaseCommand):
                 self.stdout.write(
                     "Seven authenticated frontend routes rendered successfully over HTTP."
                 )
+        reversal_checks = 0
+        for key, session in sessions.items():
+            other = "cedar" if key == "harbor" else "harbor"
+            own_patient = demo_id(key + ":alex")
+            foreign_patient = demo_id(other + ":alex")
+            rejected = [
+                session.post(
+                    f"{root}{foreign_patient}/billing/reversals/", json={}, timeout=90
+                )
+            ]
+            foreign_billing = sessions[other].get(
+                f"{root}{foreign_patient}/billing/", timeout=90
+            )
+            foreign_billing.raise_for_status()
+            before = foreign_billing.json()["matching"]
+            for item in before["matches"]:
+                rejected.append(
+                    session.post(
+                        f"{root}{own_patient}/billing/reversals/",
+                        json={
+                            "match": item["id"],
+                            "reason": "MUST-BE-REJECTED foreign match",
+                        },
+                        timeout=90,
+                    )
+                )
+            if any(response.status_code != 404 for response in rejected):
+                raise CommandError("Match reversal cross-practice rejection failed.")
+            after = sessions[other].get(f"{root}{foreign_patient}/billing/", timeout=90)
+            after.raise_for_status()
+            if after.json()["matching"] != before:
+                raise CommandError(
+                    "Foreign matching records changed during rejection checks."
+                )
+            reversal_checks += len(rejected)
+        self.stdout.write(
+            f"{reversal_checks} match reversal HTTP isolation checks passed."
+        )
         appointment_checks = 0
         for key, session in sessions.items():
             other = "cedar" if key == "harbor" else "harbor"

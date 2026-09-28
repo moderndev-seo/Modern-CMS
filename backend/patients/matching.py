@@ -12,7 +12,7 @@ from common.permissions import is_org_admin
 from contacts.access import assert_contact_access
 from invoices.models import Invoice, Payment
 from patients.appointments import Conflict
-from patients.models import PaymentMatch, Receipt
+from patients.models import PaymentMatch, PaymentMatchReversal, Receipt
 from patients.views import PracticeView
 
 
@@ -103,14 +103,16 @@ class MatchPayments(PracticeView):
                         }
                     )
                 existing = PaymentMatch.objects.filter(
-                    org=org, receipt=receipt, invoice_payment=payment
+                    org=org, receipt=receipt, invoice_payment=payment, active=True
                 ).first()
                 if existing:
                     return Response({"id": str(existing.id), "already_matched": True})
                 if (
-                    PaymentMatch.objects.filter(org=org, receipt=receipt).exists()
+                    PaymentMatch.objects.filter(
+                        org=org, receipt=receipt, active=True
+                    ).exists()
                     or PaymentMatch.objects.filter(
-                        org=org, invoice_payment=payment
+                        org=org, invoice_payment=payment, active=True
                     ).exists()
                 ):
                     raise Conflict(
@@ -129,3 +131,53 @@ class MatchPayments(PracticeView):
                 "These records could not be matched. Reload and check for an existing match."
             ) from error
         return Response({"id": str(match.id), "already_matched": False}, status=201)
+
+
+class ReversalInput(serializers.Serializer):
+    match = serializers.UUIDField()
+    reason = serializers.CharField(max_length=1000)
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict) and set(data) - set(self.fields):
+            raise ValidationError({"detail": "Only match and reason may be supplied."})
+        return super().to_internal_value(data)
+
+
+class ReversePaymentMatch(PracticeView):
+    def post(self, request, pk):
+        patient = self.patient(request, pk)
+        if not is_org_admin(request.profile):
+            raise PermissionDenied("Only practice administrators may reverse matches.")
+        assert_contact_access(request.profile, patient.contact)
+        serializer = ReversalInput(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        values = serializer.validated_data
+        org = request.profile.org
+        with transaction.atomic():
+            original = get_object_or_404(
+                PaymentMatch.objects.select_for_update(of=("self",)),
+                pk=values["match"],
+                org=org,
+                receipt__patient=patient,
+                receipt__org=org,
+            )
+            existing = PaymentMatchReversal.objects.filter(
+                org=org, match=original
+            ).first()
+            if existing:
+                return Response({"id": str(existing.id), "already_reversed": True})
+            reversal = PaymentMatchReversal.objects.create(
+                org=org,
+                match=original,
+                reason=values["reason"],
+                created_by=request.user,
+            )
+            # PostgreSQL's audit trigger releases both unique active references atomically.
+            # The test-only SQLite backend has no trigger support for this invariant.
+            from django.db import connection
+
+            if connection.vendor != "postgresql":
+                PaymentMatch.objects.filter(pk=original.id, org=org).update(
+                    active=False
+                )
+        return Response({"id": str(reversal.id), "already_reversed": False}, status=201)

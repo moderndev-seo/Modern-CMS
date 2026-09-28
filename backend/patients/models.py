@@ -165,15 +165,41 @@ class AppointmentChange(BaseOrgModel):
 class PaymentMatch(BaseOrgModel):
     """Immutable evidence that two existing records represented the same payment."""
 
-    receipt = models.OneToOneField(
-        Receipt, on_delete=models.PROTECT, related_name="invoice_match"
+    receipt = models.ForeignKey(
+        Receipt, on_delete=models.PROTECT, related_name="invoice_matches"
     )
-    invoice_payment = models.OneToOneField(
-        "invoices.Payment", on_delete=models.PROTECT, related_name="patient_match"
+    invoice_payment = models.ForeignKey(
+        "invoices.Payment", on_delete=models.PROTECT, related_name="patient_matches"
     )
     reason = models.CharField(max_length=1000)
     snapshot = models.JSONField(default=dict)
+    active = models.BooleanField(default=True, editable=False)
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["receipt"],
+                condition=models.Q(active=True),
+                name="mp_active_receipt_match",
+            ),
+            models.UniqueConstraint(
+                fields=["invoice_payment"],
+                condition=models.Q(active=True),
+                name="mp_active_invoice_match",
+            ),
+        ]
         db_table = "mp_payment_match"
+        ordering = ["created_at", "id"]
+
+
+class PaymentMatchReversal(BaseOrgModel):
+    """Permanent correction evidence; original match facts are never rewritten."""
+
+    match = models.OneToOneField(
+        PaymentMatch, on_delete=models.PROTECT, related_name="reversal"
+    )
+    reason = models.CharField(max_length=1000)
+
+    class Meta:
+        db_table = "mp_payment_match_reversal"
         ordering = ["created_at", "id"]
