@@ -233,3 +233,30 @@ class InvoiceCreditAdjustment(BaseOrgModel):
                 fields=["org", "request_id"], name="mp_invoice_credit_request"
             ),
         ]
+
+
+class ReceiptAllocation(BaseOrgModel):
+    """Each immutable version replaces the complete allocation for one receipt."""
+
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT)
+    receipt = models.ForeignKey(Receipt, on_delete=models.PROTECT)
+    revision = models.PositiveIntegerField()
+    request_id = models.UUIDField()
+    reason = models.CharField(max_length=1000)
+    lines = models.JSONField(default=list)
+    snapshot = models.JSONField(default=dict)
+
+    class Meta:
+        db_table = "mp_receipt_allocation"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_allocation_request"
+            ),
+            models.UniqueConstraint(
+                fields=["receipt", "revision"], name="mp_allocation_revision"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(revision__gt=0),
+                name="mp_allocation_revision_positive",
+            ),
+        ]

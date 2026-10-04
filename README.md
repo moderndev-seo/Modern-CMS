@@ -29,6 +29,8 @@ Open **http://localhost:5181/login**, enter **admin@localhost**, and request a s
 
 [Detailed installation, restart, testing, and troubleshooting instructions](docs/modern-practice/team-setup.md).
 
+Administrator receipt split allocations are available from Patient → Billing review → Allocate receipt cash. They distribute cash after refunds with permanent version history; they do not change Growth or calculate final patient balances. See the optional split demo in [team setup](docs/modern-practice/team-setup.md).
+
 ## What is implemented
 
 - Patient identity linked to existing CRM contacts; searchable intake.
@@ -39,7 +41,7 @@ Open **http://localhost:5181/login**, enter **admin@localhost**, and request a s
 - Patient follow-up tasks using the existing CRM task model.
 - Booking, rescheduling, cancellation, attendance and no-shows with change history.
 - Administrator reopening of cancellations/no-shows without duplicating booking events.
-- Patient billing review with separate receipt totals and invoice ledgers by currency, plus explicit administrator matching of equal USD payment records. Audited reversals release mistaken matches for rematching. Split allocations and refund reconciliation remain unfinished.
+- Patient billing review with separate receipt totals and invoice ledgers by currency, plus explicit administrator matching of equal USD payment records. Audited reversals release mistaken matches for rematching. Net-receipt split allocations are available separately; explicit invoice-level refund reconciliation and final patient balances remain unfinished.
 - Receipt-to-invoice coverage: linked payments and their refunds, unmatched receipts, and changed matches needing review, with totals across all records.
 - Audited internal invoice charge credits and full reversals, with adjusted billed values in patient billing review; no cash writes or automatic legacy-invoice changes.
 - Practice permissions, PostgreSQL RLS and cross-practice relationship checks.

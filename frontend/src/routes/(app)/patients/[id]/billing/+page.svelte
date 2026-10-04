@@ -13,6 +13,9 @@
 <svelte:head><title>Billing review · {billing.patient_name} | Modern Practice</title></svelte:head>
 <div class="mp-page">
   <a href={resolve(asInternalPath(`/patients/${billing.patient_id}`))}>← Patient journey</a>
+  <a href={resolve(asInternalPath(`/patients/${billing.patient_id}/allocations`))}
+    >Allocate receipt cash →</a
+  >
   <header class="mp-header">
     <div>
       <p class="mp-eyebrow">Patient finances · All recorded dates</p>
@@ -83,8 +86,9 @@
       <p class="mp-muted">
         These groups partition patient collections; they are not additional revenue. A changed or
         reversed match contributes nothing to linked totals. Refunds shown here do not issue an
-        invoice credit or change invoice paid/due values. Final patient balances and split
-        allocations are not implemented. Charge credits are recorded separately below.
+        invoice credit or change invoice paid/due values. Final patient balances are not
+        implemented. Use Allocate receipt cash for explicit split allocations. That separate view is
+        not added to this matching evidence. Charge credits are recorded separately below.
       </p>
     </div>
   </section>

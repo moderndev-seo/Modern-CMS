@@ -77,3 +77,9 @@ After the base seed, run `docker compose exec backend python manage.py seed_mode
 ## Internal charge-credit demo
 
 Pull the latest code and run `docker compose up --build -d` to apply `patients.0006_invoice_credit_adjustments`. In a TEST practice, open a patient’s Billing review, expand **Record charge credit** on an issued USD invoice, enter a fictional reason and amount, and confirm. Inspect adjusted billed value and **Charge credit history**. **Reverse this credit** creates a separate full reversal. These internal adjustments do not modify legacy invoice totals/paid/due/status, issue credit-note documents, or refund money. The audit migration is deliberately irreversible; do not roll back by deleting its table/history. Fresh seeds create no charge credits.
+
+## Optional split-allocation demo
+
+Run `docker compose up --build -d` after pulling so startup applies `patients.0007_receipt_allocations`, an irreversible audit migration. After the base and billing seeds, run `docker compose exec backend python manage.py seed_modern_practice_allocations`. It safely adds one USD 400 fictional second invoice per TEST practice without adding cash; existing records remain untouched on rerun.
+
+In Harbor, open Alex → Billing review → Allocate receipt cash → DEMO-harbor-001. Allocate USD 700 to TEST-HARBOR-MATCH and USD 400 to TEST-HARBOR-SPLIT, enter a fictional reason and save. Net collected remains USD 1,100 and unallocated becomes zero. Changing a plan replaces all its lines, preserves prior versions and requires the latest revision. Clearing records an empty version; it does not delete history or money. Allocations are separate from payment matching, invoice paid/due values and Growth. A later refund or changed invoice requires explicit review and replacement of the affected plan. Final patient balances are not yet available.

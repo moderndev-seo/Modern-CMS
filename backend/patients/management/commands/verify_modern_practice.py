@@ -179,6 +179,10 @@ class Command(BaseCommand):
                         f"/patients/{demo_id(key + ':alex')}/appointments",
                         "Scheduled times and outcomes",
                     ),
+                    (
+                        f"/patients/{demo_id(key + ':alex')}/allocations",
+                        "Net cash allocation status",
+                    ),
                     ("/practice-modules/reviews", "Not implemented"),
                 ):
                     page = front.get(
@@ -189,7 +193,7 @@ class Command(BaseCommand):
                             f"Frontend page {path} failed: HTTP {page.status_code}"
                         )
                 self.stdout.write(
-                    "Seven authenticated frontend routes rendered successfully over HTTP."
+                    "Eight authenticated frontend routes rendered successfully over HTTP."
                 )
         reversal_checks = 0
         for key, session in sessions.items():
@@ -289,6 +293,72 @@ class Command(BaseCommand):
             credit_checks += len(rejected)
         self.stdout.write(
             f"{credit_checks} invoice credit HTTP isolation checks passed."
+        )
+        allocation_checks = 0
+        for key, session in sessions.items():
+            other = "cedar" if key == "harbor" else "harbor"
+            own_patient, foreign_patient = (
+                demo_id(key + ":alex"),
+                demo_id(other + ":alex"),
+            )
+            own_url, foreign_url = (
+                f"{root}{own_patient}/allocations/",
+                f"{root}{foreign_patient}/allocations/",
+            )
+            response = session.get(own_url, timeout=90)
+            response.raise_for_status()
+            before = response.json()
+            totals = before["totals"]
+            if sum(
+                Decimal(str(totals[k]))
+                for k in ("allocated", "unallocated", "needs_review")
+            ) != Decimal(str(totals["net_collected"])):
+                raise CommandError("Allocation cash groups do not reconcile.")
+            revision = next(
+                r["revision"]
+                for r in before["receipts"]
+                if r["id"] == str(demo_id(key + ":alex:payment"))
+            )
+            body = {
+                "receipt": str(demo_id(key + ":alex:payment")),
+                "revision": revision,
+                "request_id": str(demo_id("rejected-allocation:" + key)),
+                "reason": "MUST-BE-REJECTED foreign allocation",
+                "lines": [],
+            }
+            rejected = [
+                session.get(foreign_url, timeout=90),
+                session.post(foreign_url, json={}, timeout=90),
+                session.post(
+                    own_url,
+                    json={**body, "receipt": str(demo_id(other + ":alex:payment"))},
+                    timeout=90,
+                ),
+                session.post(
+                    own_url,
+                    json={
+                        **body,
+                        "lines": [
+                            {
+                                "invoice": str(demo_id(other + ":billing:invoice")),
+                                "amount": "1.00",
+                            }
+                        ],
+                    },
+                    timeout=90,
+                ),
+            ]
+            if any(r.status_code != 404 for r in rejected):
+                raise CommandError("Allocation cross-practice rejection failed.")
+            response = session.get(own_url, timeout=90)
+            response.raise_for_status()
+            if response.json() != before:
+                raise CommandError(
+                    "Allocation records changed during rejection checks."
+                )
+            allocation_checks += len(rejected)
+        self.stdout.write(
+            f"{allocation_checks} allocation HTTP isolation checks passed; cash groups reconcile."
         )
         appointment_checks = 0
         for key, session in sessions.items():
