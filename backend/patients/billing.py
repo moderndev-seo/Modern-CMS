@@ -11,6 +11,7 @@ from contacts.access import assert_contact_access
 from invoices.models import UNPAID_STATUSES, Invoice, Payment
 from patients.matching import matches_current_records
 from patients.models import PaymentMatch, Receipt
+from patients.reconciliation import receipt_coverage
 from patients.views import PracticeView
 
 BILLED_STATUSES = (*UNPAID_STATUSES, "Paid")
@@ -80,6 +81,7 @@ class PatientBilling(PracticeView):
             )
             .order_by("-created_at", "id")
         )
+        coverage = receipt_coverage(patient, matches)
         receipt_choices = (
             Receipt.objects.filter(org=org, patient=patient, kind="payment")
             .exclude(pk__in=matches.filter(active=True).values("receipt_id"))
@@ -102,6 +104,7 @@ class PatientBilling(PracticeView):
                 "patient_name": f"{patient.contact.first_name} {patient.contact.last_name}".strip(),
                 "scope": "All recorded dates; invoices linked to this patient's CRM contact. Explicit equal-amount payment matches do not allocate refunds or change either ledger.",
                 "receipt_currency": "USD",
+                "receipt_coverage": coverage,
                 "matching": {
                     "receipt_count": receipt_choices.count(),
                     "payment_count": payment_choices.count(),

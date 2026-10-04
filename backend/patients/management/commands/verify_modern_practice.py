@@ -66,6 +66,28 @@ class Command(BaseCommand):
                 or Decimal(str(patient["net_revenue"])) != expected
             ):
                 raise CommandError("Demo receipts and report do not reconcile.")
+            billing_response = session.get(
+                f"{root}{demo_id(key + ':alex')}/billing/", timeout=90
+            )
+            billing_response.raise_for_status()
+            coverage = billing_response.json()["receipt_coverage"]
+            covered_net = sum(
+                Decimal(str(coverage[group]["net_collected"]))
+                for group in ("linked", "unmatched", "needs_review")
+            )
+            invoice_net = sum(
+                Decimal(str(row["net_collected"]))
+                for row in coverage["by_invoice"].values()
+            )
+            if covered_net != expected or invoice_net != Decimal(
+                str(coverage["linked"]["net_collected"])
+            ):
+                raise CommandError(
+                    "Receipt coverage does not reconcile with collections."
+                )
+            self.stdout.write(
+                "Receipt coverage groups and invoice links reconcile with net collections."
+            )
             other = "cedar" if key == "harbor" else "harbor"
             other_patient = demo_id(other + ":alex")
             attempts = [

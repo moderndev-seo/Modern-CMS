@@ -1,6 +1,6 @@
 # Modern Practice CRM — project handoff
 
-Updated: October 4, 2026. Latest published feature baseline: `9e1189abe1c985b78849d6445577e71fbf35c0b4` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). The seventh increment, audited match reversal, is published. Subsequent documentation commits do not change the feature baseline. Verify the current branch before continuing.
+Updated: October 4, 2026. Prior published feature baseline: `9e1189abe1c985b78849d6445577e71fbf35c0b4` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). This handoff accompanies the eighth increment, receipt/refund coverage; consult Git history for its publishing commit. Verify the current branch before continuing.
 
 ## Objective and explicit requirements
 
@@ -18,7 +18,7 @@ Standing scope: no live advertising, messaging, review or payment integrations; 
 | --- | --- |
 | Milestone 1: patient journey and Growth | Implemented and tested; not a claim of production readiness |
 | Milestone 2: usability and demo acceptance preparation | Implemented; team acceptance remains a human activity |
-| Milestone 3: practice operations | In progress; seven increments delivered below |
+| Milestone 3: practice operations | In progress; eight increments delivered below |
 | Production rollout and live integrations | Not implemented or authorized by the continuation instruction |
 
 Milestone 1 uses existing Contact identity with a Patient relationship, immutable first-touch attribution, separate touches, journey events, payment/refund receipts, and chronological activity. Growth counts leads and distinct booked/treated patients, sums net receipt cash, and credits revenue to original source. Selected date ranges are UTC days, inclusive start through exclusive start of the day after end; cash uses receipt date. Unknown remains explicit. Missing spend is unavailable, and zero spend does not yield infinite ROAS. Current receipt currency is USD. Existing CRM remains reachable; Messages and Reviews are planned.
@@ -36,11 +36,13 @@ Milestone 3 delivered:
 
 7. Audited match reversal: administrators record a required reason, actor and timestamp in a separate append-only table. A database trigger releases the original pair atomically; partial unique constraints permit only one active match per record. Matching again creates a new history entry. Old reversal retries cannot reverse a newer match. Migration `0005` preserves existing matches and is deliberately irreversible to protect audit history.
 
+8. Receipt/refund coverage: read-only grouping into valid active matches, unmatched receipts and changed matches needing review. Refunds follow the recorded original payment, and USD invoices show linked gross/refund/net collections. All records contribute regardless of pagination. No new schema, ledger writes, allocation editor or patient amount-due calculation.
+
 Implementation choices (not additional user requirements): USD-only receipt reporting; first-touch revenue attribution; administrator-only billing matching; one-to-one equal-amount matches; permanent match and reversal history; UTC scheduling; reuse of Contact, Task, Invoice and Payment. Explain changes to these choices before implementing them.
 
 ## Next work and remaining limitations
 
-**Recommended next increment, not an already approved detailed design:** define and implement receipt/refund allocation toward reconciled patient balances. Inspect both existing ledgers first; retain explicit matching and audit history, and never count invoice values as new collected cash. Split allocations and refund behavior need clear rules and focused permission/calculation tests before implementation.
+**Recommended next increment, not an already approved detailed design:** define and implement explicit split allocations and invoice credit adjustments toward reconciled patient balances. Receipt/refund coverage is now available as the read-only baseline. Inspect both existing ledgers first; retain explicit matching and audit history, and never count invoice values as new collected cash. Split allocations and refund behavior need clear rules and focused permission/calculation tests before implementation.
 
 Remaining backlog, with order and detailed design still proposals:
 
@@ -49,9 +51,13 @@ Remaining backlog, with order and detailed design still proposals:
 - Team acceptance and hardening: complete team walkthrough, accessibility review, concurrent-request/load testing, and production/security/privacy readiness work. This CRM is not an EHR or a completed healthcare compliance program.
 - Planned product areas: Messages and Reviews and any live service integration need their own scoped implementation and authorization. Do not infer authorization to connect services or deploy from “continue.”
 
-The seventh increment is implemented; verification evidence is recorded below. No partial feature implementation remains. The original working folder has many uncommitted files because publication used a separate sanitized Git history; see the publishing warning below.
+The eighth increment is implemented; verification evidence is recorded below. No partial feature implementation remains. The original working folder has many uncommitted files because publication used a separate sanitized Git history; see the publishing warning below.
 
-## Verification evidence at the latest feature checkpoint
+## Eighth-increment verification
+
+All 40 PostgreSQL patient tests passed; new coverage tests exercise refunds, reversal/rematching, drift, unchanged Growth, tenant/admin checks, foreign currency, empty states, 101 matches and invoice pagination. Ruff, migration drift, Svelte check (0 errors/warnings) and route ESLint passed. Live checks reconciled coverage totals in both practices, rejected 33 foreign-practice requests and rendered 14 authenticated pages. No new records or schema were required. A fresh build/restart, concurrent-load test and full accessibility audit were not repeated for this increment. The build/restart results below belong to the seventh increment.
+
+## Seventh-increment verification (historical)
 
 - All 37 PostgreSQL patient tests passed, including four new reversal tests: retry/rematching, retained history, unchanged cash/Growth, permissions and input validation, wrong-patient/foreign links, forced RLS, database bypass rejection, rollback, drift and reassignment. One existing Django email-settings deprecation warning remains.
 - Live verification: 33 cross-practice rejection checks (22 journey/billing/matching, 4 reversal, 7 appointment), 14 authenticated pages, and both demo revenue totals passed after the correction rehearsal.
@@ -101,3 +107,5 @@ Final post-restart HTTP verification passed: 33 isolation rejections, 14 authent
 ## October 4 resumption check
 
 GitHub main was confirmed at feature commit `9e1189a`. Docker Desktop was stopped; the existing six containers were started with their saved volumes. The first live check ran before the backend was ready. After readiness, all 33 isolation checks and 14 authenticated routes passed again; Harbor remained $1,100 and Cedar $700, with the same demo snapshot hash as September 28. Browser automation timed out, so a fresh visual check could not be completed on October 4; the successful reversal/rematch browser walkthrough above was performed September 28. No new feature changes or database reset were needed.
+
+Browser verification for the eighth increment succeeded on October 4 after local sign-in: Harbor showed $1,200 linked payments, $100 related refunds and $1,100 linked net collections at both patient and invoice level, with zero unmatched/changed amounts. Existing reversed and active history remained visible. No financial records were written during this check.

@@ -40,6 +40,7 @@ Open **http://localhost:5181/login**, enter **admin@localhost**, and request a s
 - Booking, rescheduling, cancellation, attendance and no-shows with change history.
 - Administrator reopening of cancellations/no-shows without duplicating booking events.
 - Patient billing review with separate receipt totals and invoice ledgers by currency, plus explicit administrator matching of equal USD payment records. Audited reversals release mistaken matches for rematching. Split allocations and refund reconciliation remain unfinished.
+- Receipt-to-invoice coverage: linked payments and their refunds, unmatched receipts, and changed matches needing review, with totals across all records.
 - Practice permissions, PostgreSQL RLS and cross-practice relationship checks.
 
 Existing CRM tools remain accessible. The inherited Flutter app is included as upstream source; Modern Practice's new screens are implemented in the web app, not in that mobile client.

@@ -4,6 +4,7 @@
   import { asInternalPath } from '$lib/utils/paths.js';
   let { data, form } = $props();
   let billing = $derived(data.billing);
+  let coverage = $derived(billing.receipt_coverage);
   /** @param {string | number} value */
   const amount = (value) =>
     Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -60,6 +61,33 @@
       </div>
     </section>
   </div>
+  <section class="mp-panel">
+    <div class="mp-panel-heading"><h2>Receipt-to-invoice coverage · USD</h2></div>
+    <div class="mp-form">
+      <p>
+        All recorded dates and all receipts, including records beyond the lists below. Refunds
+        follow their original receipt through its active, unchanged payment match.
+      </p>
+      {#each [{ key: 'linked', label: 'Linked through valid matches' }, { key: 'unmatched', label: 'No active match' }, { key: 'needs_review', label: 'Changed match — needs review' }] as group (group.key)}
+        <article class="mp-followup">
+          <h3>{group.label}</h3>
+          <p>
+            {coverage[group.key].payment_count} payment receipts · Received USD {amount(
+              coverage[group.key].payments
+            )} · Refunds USD {amount(coverage[group.key].refunds)} · Net USD {amount(
+              coverage[group.key].net_collected
+            )}
+          </p>
+        </article>
+      {/each}
+      <p class="mp-muted">
+        These groups partition patient collections; they are not additional revenue. A changed or
+        reversed match contributes nothing to linked totals. Refunds shown here do not issue an
+        invoice credit or change invoice paid/due values. Patient balances, split allocations and
+        credit adjustments are not implemented.
+      </p>
+    </div>
+  </section>
   <section class="mp-panel">
     <div class="mp-panel-heading"><h2>Match existing payments</h2></div>
     <form class="mp-form" method="POST" action="?/match">
@@ -135,8 +163,7 @@
             </p>
             <p>{match.reversal.reason}</p>
             <p class="mp-muted">
-              Historical match only. The records may have been matched again below a newer history
-              entry.
+              Historical match only. See newer history entries for any later match.
             </p>
           {:else}
             <p>
@@ -195,6 +222,26 @@
           <p>
             Stored paid: {amount(invoice.stored_paid)} · Stored due: {amount(invoice.stored_due)}
           </p>
+          {#if invoice.currency === 'USD'}
+            {@const linked = coverage.by_invoice[invoice.id]}
+            <p>
+              Patient receipts linked through valid matches: USD {amount(linked?.payments ?? 0)} · Related
+              refunds: USD {amount(linked?.refunds ?? 0)} · Net linked collections: USD {amount(
+                linked?.net_collected ?? 0
+              )}
+            </p>
+            <p class="mp-muted">
+              {linked
+                ? 'Derived from current matches and the original payment on each refund.'
+                : 'No patient receipts linked through a valid active match.'} This is not an amount owed
+              or proof of bank settlement.
+            </p>
+          {:else}
+            <p class="mp-muted">
+              Receipt coverage unavailable for this currency; patient receipts are USD. No
+              conversion is performed.
+            </p>
+          {/if}
           {#if !invoice.ledger_matches_stored_paid}<p class="mp-error">
               Needs review: invoice payment entries differ from its stored paid amount. No automatic
               correction was made.
