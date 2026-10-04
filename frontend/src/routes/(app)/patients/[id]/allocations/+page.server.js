@@ -18,7 +18,23 @@ export const actions = {
     const form = await event.request.formData();
     const invoices = form.getAll('invoice');
     const amounts = form.getAll('amount');
+    const refundIds = form.getAll('refund');
+    const refundInvoices = form.getAll('refund_invoice');
+    const refundAmounts = form.getAll('refund_amount');
     const values = {
+      refund_lines:
+        form.get('clear') === '1'
+          ? []
+          : refundIds
+              .map((refund, index) => ({
+                refund: String(refund),
+                invoice:
+                  refundInvoices[index] === 'unallocated'
+                    ? null
+                    : String(refundInvoices[index] || ''),
+                amount: String(refundAmounts[index] || '')
+              }))
+              .filter((line) => line.refund || line.invoice || line.amount),
       receipt: String(form.get('receipt') || ''),
       revision: String(form.get('revision') || '0'),
       request_id: String(form.get('request_id') || ''),

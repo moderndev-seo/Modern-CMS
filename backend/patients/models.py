@@ -244,6 +244,7 @@ class ReceiptAllocation(BaseOrgModel):
     request_id = models.UUIDField()
     reason = models.CharField(max_length=1000)
     lines = models.JSONField(default=list)
+    refund_lines = models.JSONField(default=list)
     snapshot = models.JSONField(default=dict)
 
     class Meta:

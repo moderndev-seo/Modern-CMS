@@ -1,6 +1,6 @@
 # Modern Practice CRM — project handoff
 
-Updated: October 4, 2026. Prior published feature baseline: `2d60ebb08920f89d45b7366589b193e6cec34ad0` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). This handoff accompanies the tenth increment, explicit net-receipt split allocations; consult Git history for its publishing commit. Verify the current branch before continuing.
+Updated: October 4, 2026. Prior published feature baseline: `459071e791b6dbe8a9213cf6e52e2796396c5b2a` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). This handoff accompanies the eleventh increment, refund explanations and guarded recorded balances; consult Git history for its publishing commit. Verify the current branch before continuing.
 
 ## Objective and explicit requirements
 
@@ -18,7 +18,7 @@ Standing scope: no live advertising, messaging, review or payment integrations; 
 | --- | --- |
 | Milestone 1: patient journey and Growth | Implemented and tested; not a claim of production readiness |
 | Milestone 2: usability and demo acceptance preparation | Implemented; team acceptance remains a human activity |
-| Milestone 3: practice operations | In progress; ten increments delivered below |
+| Milestone 3: practice operations | In progress; eleven increments delivered below |
 | Production rollout and live integrations | Not implemented or authorized by the continuation instruction |
 
 Milestone 1 uses existing Contact identity with a Patient relationship, immutable first-touch attribution, separate touches, journey events, payment/refund receipts, and chronological activity. Growth counts leads and distinct booked/treated patients, sums net receipt cash, and credits revenue to original source. Selected date ranges are UTC days, inclusive start through exclusive start of the day after end; cash uses receipt date. Unknown remains explicit. Missing spend is unavailable, and zero spend does not yield infinite ROAS. Current receipt currency is USD. Existing CRM remains reachable; Messages and Reviews are planned.
@@ -42,6 +42,8 @@ Milestone 3 delivered:
 
 10. Explicit net-receipt split allocations: administrator-only complete plans across issued USD invoices, immutable versions, request retries, stale-revision rejection, clearing with a reason and refund/invoice drift review. Migration `0007` adds forced RLS and database relationship/amount/revision guards. All-record cash groups reconcile without combining allocation with payment-match evidence.
 
+11. Refund explanations and recorded balances: migration `0008` extends existing allocation versions with capped, practice-validated refund lines. A read-only balance view combines issued USD charges, valid internal credits and explicitly allocated net cash only after reconciliation checks pass; otherwise balances are null with reasons. Refunds are never subtracted twice.
+
 Implementation choices (not additional user requirements): USD-only receipt reporting; first-touch revenue attribution; administrator-only billing matching; one-to-one equal-amount matches; permanent match and reversal history; UTC scheduling; reuse of Contact, Task, Invoice and Payment. Explain changes to these choices before implementing them.
 
 ## Milestone completion approach
@@ -50,18 +52,22 @@ The owner agreed to complete each milestone’s essential end-to-end workflow an
 
 ## Next work and remaining limitations
 
-**Recommended next increment, not an already approved detailed design:** explicit refund reconciliation and final patient balance rules using allocation and credit evidence. Split allocation of remaining receipt cash is available. Define how refunds reduce individual invoice allocations, how overpayments/credits are presented, and when a balance must remain unavailable. Preserve both original ledgers and never count invoice values as collected cash.
+**Recommended next increment, not an already approved detailed design:** audited correction of erroneous receipt/refund records and duplicate-payment resolution. The recorded-balance workflow is available when its checks pass, but incorrect original cash entries still need a safe correction path that preserves audit history and does not masquerade as a real-world refund. Inspect current receipt protections and define correction/reporting rules before implementing. Complete team financial acceptance before expanding into Messages/Reviews.
 
 Remaining backlog, with order and detailed design still proposals:
 
-- Financial workflow: explicit invoice-level refund reconciliation, duplicate-payment resolution, credit-note documents/export integration and reconciled patient balances. Internal credits are currently included only in the Modern Practice billing review, not legacy invoice totals/paid/due/status or exports. Matching does not verify bank settlement or prevent duplicate money entry through independent existing ledgers. Matching currently exposes the latest 100 eligible entries per ledger and 100 matches, with counts; larger-history search/pagination remains unfinished. Allocation editing supports up to 20 invoices per receipt, and its receipt/invoice chooser and history show the latest 100 with counts. Totals use all records.
+- Financial workflow: audited cash corrections and duplicate-payment resolution, many-to-many legacy payment matching, credit-note documents/export integration and human financial acceptance. Recorded balances describe stored data, not verified bank settlement or insurance responsibility. Complex legacy payment combinations remain blocked by the one-to-one matching requirement. Internal credits are currently included only in the Modern Practice billing review, not legacy invoice totals/paid/due/status or exports. Matching does not verify bank settlement or prevent duplicate money entry through independent existing ledgers. Matching currently exposes the latest 100 eligible entries per ledger and 100 matches, with counts; larger-history search/pagination remains unfinished. Allocation editing supports up to 20 invoices per receipt, and its receipt/invoice chooser and history show the latest 100 with counts. Totals use all records.
 - Appointment operations: corrections to attended events, provider/room availability, practice timezone settings, calendar connections and reminders. Existing conflict checks concern the patient, not provider/room capacity.
 - Team acceptance and hardening: complete team walkthrough, accessibility review, concurrent-request/load testing, and production/security/privacy readiness work. This CRM is not an EHR or a completed healthcare compliance program.
 - Planned product areas: Messages and Reviews and any live service integration need their own scoped implementation and authorization. Do not infer authorization to connect services or deploy from “continue.”
 
-The tenth increment is implemented and verified as recorded below. No partial feature implementation remains. The publishing commit accompanies this handoff. The original working folder has many uncommitted files because publication used a separate sanitized Git history; see the publishing warning below.
+The eleventh increment is implemented and verified below. No partial feature implementation remains. The publishing commit accompanies this handoff. The original working folder has many uncommitted files because publication used a separate sanitized Git history; see the publishing warning below.
 
-## Tenth-increment verification
+## Eleventh-increment verification
+
+All 58 PostgreSQL patient tests passed, including seven new refund/balance tests. Ruff, changed-route ESLint, migration drift, Django system checks and Svelte check (0 errors/warnings) passed. The first migration attempt failed on SQL CASE syntax and rolled back; the corrected migration applied successfully. Browser verified unavailable → available balance after explaining Harbor’s existing USD 100 refund: USD 1,600 billed less USD 1,100 net cash = USD 500 recorded balance. The existing email-settings deprecation warning remains. Live verification passed 52 isolation rejections and 18 authenticated pages, including balance availability/arithmetic and refund-link rejection. Restart fingerprints matched across 84 model/organization groups in all three practices, including four allocation versions. No volumes were removed. Production build passed with the Node adapter (empty generated env chunk warning); post-restart HTTP verification passed all 52 isolation rejections and 18 authenticated routes with unchanged revenue and journey/Growth hash. Browser reload retained the USD 500 recorded balance. No concurrent-load test or full accessibility audit was performed.
+
+## Tenth-increment verification (historical)
 
 All 51 PostgreSQL patient tests passed, including six allocation tests for splits/replacement/clearing, retries and stale revisions, refund/invoice drift, unchanged Growth/ledgers, permissions, foreign links, database RLS/immutability/amount/revision checks, all-record totals beyond display limits and rerunnable optional seeds. Svelte check: 0 errors, 0 warnings. Route ESLint, Ruff, migration drift and Django system checks passed. Live HTTP passed 48 isolation rejections and 16 authenticated pages, with reconciled allocation/coverage groups and unchanged revenue/Growth snapshot. Browser split → clear → restore retained three versions; a premature blank-reason clear was rejected before the successful attempt. Production build passed with the Node adapter; it reported an empty generated env chunk. PostgreSQL/backend restart preserved all 84 checked model/organization groups, including three allocation versions. No volume was removed. No concurrent-load test or full accessibility audit was performed. The existing email-settings deprecation warning remains.
 
@@ -104,10 +110,11 @@ Base demo: `docker compose exec backend python manage.py seed_modern_practice --
 
 Select a TEST practice at http://localhost:5181/org. For September 1–30, 2026, both seeds have 3 leads, 2 booked patients and 1 treated patient. Harbor net collected is $1,100 ($1,200 payment less $100 refund), with Google Ads source ROAS 5.50 on $200 spend. Cedar net collected is $700, with Google Ads ROAS 3.50. Overall ROAS can remain unavailable because another source lacks spend. Later manual demo records may change counts; do not reset them to match these seed values.
 
-Local demo checkpoint: Harbor Alex has two persisted match entries (one reversed, one active), one reversal audit entry, and no eligible unmatched pair; Cedar Alex remains available for a matching demo. Harbor also has one USD 100 internal credit and its full reversal (two permanent entries, zero active credit, adjusted billed USD 1,200); cash remains USD 1,100. These manual actions are not reproduced by cloning GitHub or rerunning the seed. Harbor also has a completed demo follow-up and a reopened scheduled appointment. The original organization and records remain preserved. The optional allocation seed added one USD 400 fictional second invoice per TEST practice. Harbor has three allocation versions (700/400 split, clear, restored 700/400 split), with USD 1,100 valid allocated cash and zero unallocated; Cedar is unallocated and ready for a fresh demo. These extra invoices increase billed totals only, not cash or Growth.
+Local demo checkpoint: Harbor Alex has two persisted match entries (one reversed, one active), one reversal audit entry, and no eligible unmatched pair; Cedar Alex remains available for a matching demo. Harbor also has one USD 100 internal credit and its full reversal (two permanent entries, zero active credit, adjusted billed USD 1,200); cash remains USD 1,100. These manual actions are not reproduced by cloning GitHub or rerunning the seed. Harbor also has a completed demo follow-up and a reopened scheduled appointment. The original organization and records remain preserved. The optional allocation seed added one USD 400 fictional second invoice per TEST practice. Harbor has four allocation versions (700/400 split, clear, restored split, then USD 100 refund explained against TEST-HARBOR-MATCH), with USD 1,100 valid allocated cash and zero unallocated; Harbor’s recorded balance is USD 500, zero overpaid. Cedar is unallocated/unmatched and demonstrates unavailable balances. These extra invoices increase billed totals only, not cash or Growth.
 
 - Patients: http://localhost:5181/patients
 - Growth: http://localhost:5181/growth?start=2026-09-01&end=2026-09-30
+- Harbor Alex balances: http://localhost:5181/patients/a29def23-7510-5894-9778-61392bbfe46f/balances
 - Harbor Alex billing: http://localhost:5181/patients/a29def23-7510-5894-9778-61392bbfe46f/billing
 - Cedar Alex billing: http://localhost:5181/patients/b05ee694-107f-5b98-afa1-9316d8921d66/billing
 

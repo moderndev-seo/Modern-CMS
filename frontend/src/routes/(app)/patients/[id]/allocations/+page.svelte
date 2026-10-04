@@ -4,12 +4,14 @@
   import { dateTime } from '$lib/modern-practice.js';
   let { data, form } = $props();
   let extraRows = $state(0);
+  let extraRefundRows = $state(0);
   let info = $derived(data.allocations);
   let selected = $derived(
     info.receipts.find((/** @type {any} */ row) => row.id === data.selectedReceipt)
   );
   let retry = $derived(form?.values?.receipt === selected?.id ? form?.values : null);
   let lines = $derived(retry?.lines || selected?.lines || []);
+  let refundLines = $derived(retry?.refund_lines || selected?.refund_lines || []);
   /** @param {number | string} value */
   const money = (value) =>
     Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -19,6 +21,9 @@
 >
 <div class="mp-page">
   <a href={resolve(asInternalPath(`/patients/${data.patientId}/billing`))}>← Billing review</a>
+  <a href={resolve(asInternalPath(`/patients/${data.patientId}/balances`))}
+    >Review recorded balances →</a
+  >
   <header class="mp-header">
     <div>
       <p class="mp-eyebrow">Patient finances · USD · All recorded dates</p>
@@ -46,8 +51,20 @@
         The last three amounts add up to net collected across all receipts. A changed receipt,
         refund, or invoice invalidates the entire affected plan until you review and replace it. No
         automatic proportional refund allocation occurs. These are cash distributions, not amounts
-        owed. Invoice overpayments are allowed; credit adjustments and final balances remain
-        separate.
+        owed. Invoice overpayments are allowed; see Recorded balances for reconciliation checks.
+      </p>
+    </div>
+  </section>
+  <section class="mp-panel">
+    <div class="mp-panel-heading"><h2>Refund reconciliation</h2></div>
+    <div class="mp-form">
+      <p>Recorded refunds <strong>USD {money(info.refund_totals.recorded)}</strong></p>
+      <p>Explained refunds <strong>USD {money(info.refund_totals.reconciled)}</strong></p>
+      <p>Still to explain <strong>USD {money(info.refund_totals.unreconciled)}</strong></p>
+      <p class="mp-muted">
+        Explain existing refunds by invoice or unallocated cash. This records your reconciliation
+        decision, not an automatic reconstruction of historical allocations. Refunds have already
+        reduced net cash above; they are never deducted a second time.
       </p>
     </div>
   </section>
@@ -131,6 +148,72 @@
               class="mp-button"
               onclick={() => (extraRows += 1)}>Add invoice row</button
             >{/if}
+          <h3>Explain recorded refunds</h3>
+          <p>
+            Replace the complete refund explanation with this plan. Use each refund/invoice pair
+            once. Each refund's explanation must stay within its recorded amount. Choose Unallocated
+            cash only when the refunded money was not assigned to an invoice. Maximum 100 refund
+            lines.
+          </p>
+          {#each selected.refunds as refund (refund.id)}<p>
+              {refund.reference}: USD {money(refund.amount)} · Still to explain USD {money(
+                refund.unreconciled
+              )}
+            </p>{:else}<p>No recorded refunds for this receipt.</p>{/each}
+          {#if selected.refunds.length || refundLines.length}
+            {#each Array.from( { length: Math.min(100, Math.max(1, refundLines.length) + extraRefundRows) } ) as _, index (index)}
+              <div class="mp-columns">
+                <label class="mp-field"
+                  ><span>Refund {index + 1}</span><select
+                    name="refund"
+                    value={refundLines[index]?.refund || ''}
+                  >
+                    <option value="">Choose refund</option>
+                    {#if refundLines[index]?.refund && !selected.refunds.some((/** @type {any} */ r) => r.id === refundLines[index].refund)}<option
+                        value={refundLines[index].refund}
+                        >Previous refund — unavailable; clear this row</option
+                      >{/if}
+                    {#each selected.refunds as refund (refund.id)}<option value={refund.id}
+                        >{refund.reference}</option
+                      >{/each}
+                  </select></label
+                >
+                <label class="mp-field"
+                  ><span>Refund destination {index + 1}</span><select
+                    name="refund_invoice"
+                    value={refundLines[index]?.invoice === null
+                      ? 'unallocated'
+                      : refundLines[index]?.invoice || ''}
+                  >
+                    <option value="">Choose destination</option><option value="unallocated"
+                      >Unallocated cash</option
+                    >
+                    {#if refundLines[index]?.invoice && !info.invoices.some((/** @type {any} */ i) => i.id === refundLines[index].invoice && i.eligible)}<option
+                        value={refundLines[index].invoice}
+                        >Previous invoice — unavailable; clear or change</option
+                      >{/if}
+                    {#each info.invoices.filter((/** @type {any} */ i) => i.eligible) as invoice (invoice.id)}<option
+                        value={invoice.id}>{invoice.number}</option
+                      >{/each}
+                  </select></label
+                >
+                <label class="mp-field"
+                  ><span>Refund amount {index + 1} · USD</span><input
+                    name="refund_amount"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={refundLines[index]?.amount || ''}
+                  /></label
+                >
+              </div>
+            {/each}
+            {#if Math.max(1, refundLines.length) + extraRefundRows < 100}<button
+                type="button"
+                class="mp-button"
+                onclick={() => (extraRefundRows += 1)}>Add refund row</button
+              >{/if}
+          {/if}
           <label class="mp-field"
             ><span>Reason for allocation change</span><textarea
               name="reason"
@@ -144,7 +227,8 @@
           >
           <p class="mp-muted">
             Clearing creates an empty version; it preserves prior history and returns all remaining
-            cash to unallocated. A reason is still required.
+            cash to unallocated. Refund explanations are also cleared and will need review. A reason
+            is still required.
           </p>
         </form>
       </div>
@@ -173,7 +257,12 @@
           <p class="mp-muted">{dateTime(entry.at)} · {entry.actor}</p>
           {#each entry.lines as line (line.invoice)}<p>
               {entry.invoices[line.invoice]?.number || line.invoice}: USD {money(line.amount)}
-            </p>{:else}<p>Allocations cleared.</p>{/each}
+            </p>{:else}<p>Net-cash allocations cleared.</p>{/each}
+          {#each entry.refund_lines as line (`${line.refund}:${line.invoice}`)}<p>
+              Refund {line.refund} → {line.invoice
+                ? entry.invoices[line.invoice]?.number || line.invoice
+                : 'Unallocated cash'}: USD {money(line.amount)}
+            </p>{:else}<p>No refund explanations in this version.</p>{/each}
         </article>{:else}<p>No allocation history.</p>{/each}
     </div>
   </section>

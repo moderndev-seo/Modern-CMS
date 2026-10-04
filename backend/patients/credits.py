@@ -81,7 +81,7 @@ class CreditView(PracticeView):
         patient = self.patient(request, pk)
         if not is_org_admin(request.profile):
             raise PermissionDenied(
-                "Only practice administrators may adjust invoice credits."
+                "Only practice administrators may review or change patient billing."
             )
         assert_contact_access(request.profile, patient.contact)
         return patient

@@ -183,6 +183,10 @@ class Command(BaseCommand):
                         f"/patients/{demo_id(key + ':alex')}/allocations",
                         "Net cash allocation status",
                     ),
+                    (
+                        f"/patients/{demo_id(key + ':alex')}/balances",
+                        "Invoice reconciliation",
+                    ),
                     ("/practice-modules/reviews", "Not implemented"),
                 ):
                     page = front.get(
@@ -193,7 +197,7 @@ class Command(BaseCommand):
                             f"Frontend page {path} failed: HTTP {page.status_code}"
                         )
                 self.stdout.write(
-                    "Eight authenticated frontend routes rendered successfully over HTTP."
+                    "Nine authenticated frontend routes rendered successfully over HTTP."
                 )
         reversal_checks = 0
         for key, session in sessions.items():
@@ -359,6 +363,84 @@ class Command(BaseCommand):
             allocation_checks += len(rejected)
         self.stdout.write(
             f"{allocation_checks} allocation HTTP isolation checks passed; cash groups reconcile."
+        )
+        balance_checks = 0
+        for key, session in sessions.items():
+            other = "cedar" if key == "harbor" else "harbor"
+            own_patient, foreign_patient = (
+                demo_id(key + ":alex"),
+                demo_id(other + ":alex"),
+            )
+            result = session.get(f"{root}{own_patient}/balances/", timeout=90)
+            result.raise_for_status()
+            data = result.json()
+            if data["available"]:
+                totals = data["totals"]
+                if Decimal(str(totals["adjusted_billed"])) - Decimal(
+                    str(totals["net_allocated"])
+                ) != Decimal(str(totals["recorded_balance"])):
+                    raise CommandError("Recorded balance arithmetic failed.")
+                if Decimal(str(totals["outstanding"])) - Decimal(
+                    str(totals["overpaid"])
+                ) != Decimal(str(totals["recorded_balance"])):
+                    raise CommandError("Overpayment balance arithmetic failed.")
+            elif (
+                data["totals"] is not None
+                or not data["blockers"]
+                or any(row["recorded_balance"] is not None for row in data["invoices"])
+            ):
+                raise CommandError(
+                    "Unavailable balances must have reasons and null amounts."
+                )
+            rejected = [session.get(f"{root}{foreign_patient}/balances/", timeout=90)]
+            own_url = f"{root}{own_patient}/allocations/"
+            current = session.get(own_url, timeout=90)
+            current.raise_for_status()
+            before = current.json()
+            own_receipt = next(
+                r
+                for r in before["receipts"]
+                if r["id"] == str(demo_id(key + ":alex:payment"))
+            )
+            foreign = sessions[other].get(
+                f"{root}{foreign_patient}/allocations/", timeout=90
+            )
+            foreign.raise_for_status()
+            for receipt in foreign.json()["receipts"]:
+                for refund in receipt["refunds"]:
+                    rejected.append(
+                        session.post(
+                            own_url,
+                            json={
+                                "receipt": own_receipt["id"],
+                                "revision": own_receipt["revision"],
+                                "request_id": str(
+                                    demo_id(
+                                        "rejected-refund-explanation:" + refund["id"]
+                                    )
+                                ),
+                                "reason": "MUST-BE-REJECTED foreign refund",
+                                "lines": [],
+                                "refund_lines": [
+                                    {
+                                        "refund": refund["id"],
+                                        "invoice": None,
+                                        "amount": "1.00",
+                                    }
+                                ],
+                            },
+                            timeout=90,
+                        )
+                    )
+            if any(r.status_code != 404 for r in rejected):
+                raise CommandError("Balance/refund cross-practice rejection failed.")
+            current = session.get(own_url, timeout=90)
+            current.raise_for_status()
+            if current.json() != before:
+                raise CommandError("Refund explanation rejection changed allocations.")
+            balance_checks += len(rejected)
+        self.stdout.write(
+            f"{balance_checks} balance/refund HTTP isolation checks passed; availability and arithmetic verified."
         )
         appointment_checks = 0
         for key, session in sessions.items():

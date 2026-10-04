@@ -29,7 +29,7 @@ Open **http://localhost:5181/login**, enter **admin@localhost**, and request a s
 
 [Detailed installation, restart, testing, and troubleshooting instructions](docs/modern-practice/team-setup.md).
 
-Administrator receipt split allocations are available from Patient → Billing review → Allocate receipt cash. They distribute cash after refunds with permanent version history; they do not change Growth or calculate final patient balances. See the optional split demo in [team setup](docs/modern-practice/team-setup.md).
+Administrator receipt split allocations are available from Patient → Billing review → Allocate receipt cash. They distribute cash after refunds with permanent version history; they do not change Growth. Recorded balances are available separately when reconciliation checks pass. See the optional split demo in [team setup](docs/modern-practice/team-setup.md).
 
 ## What is implemented
 
@@ -41,9 +41,10 @@ Administrator receipt split allocations are available from Patient → Billing r
 - Patient follow-up tasks using the existing CRM task model.
 - Booking, rescheduling, cancellation, attendance and no-shows with change history.
 - Administrator reopening of cancellations/no-shows without duplicating booking events.
-- Patient billing review with separate receipt totals and invoice ledgers by currency, plus explicit administrator matching of equal USD payment records. Audited reversals release mistaken matches for rematching. Net-receipt split allocations are available separately; explicit invoice-level refund reconciliation and final patient balances remain unfinished.
+- Patient billing review with separate receipt totals and invoice ledgers by currency, plus explicit administrator matching of equal USD payment records. Audited reversals release mistaken matches for rematching. Net-receipt split allocations are available separately; manual invoice-level refund explanations and guarded recorded balances are now available.
 - Receipt-to-invoice coverage: linked payments and their refunds, unmatched receipts, and changed matches needing review, with totals across all records.
 - Audited internal invoice charge credits and full reversals, with adjusted billed values in patient billing review; no cash writes or automatic legacy-invoice changes.
+- Refund explanations by invoice or unallocated cash, with recorded balances withheld until cash, refunds, credits and invoice-payment evidence are reconciled. Outstanding and overpaid amounts remain separate.
 - Practice permissions, PostgreSQL RLS and cross-practice relationship checks.
 
 Existing CRM tools remain accessible. The inherited Flutter app is included as upstream source; Modern Practice's new screens are implemented in the web app, not in that mobile client.
@@ -52,7 +53,7 @@ Existing CRM tools remain accessible. The inherited Flutter app is included as u
 
 The rerunnable seed creates two fictional practices. For **September 1–30, 2026**, each starts with 3 leads, 2 booked patients and 1 treated patient. Harbor has $1,100 net collected; Cedar has $700. The seed preserves existing records and does not reset changes. Later manual demo appointments/tasks are not part of the seed.
 
-This is an in-progress development project. Attendance corrections, financial corrections, invoice reconciliation, provider/room availability, timezone configuration, calendar connections and reminders remain unfinished. Messages and Reviews are marked planned. No live advertising, messaging, review or payment integrations have been connected. Production deployment and healthcare compliance review are separate work.
+This is an in-progress development project. Attendance corrections, audited cash/duplicate corrections, complex legacy payment matching, credit-note documents/exports, provider/room availability, timezone configuration, calendar connections and reminders remain unfinished. Messages and Reviews are marked planned. No live advertising, messaging, review or payment integrations have been connected. Production deployment and healthcare compliance review are separate work.
 
 [Milestone 1](docs/modern-practice/milestone-one.md) · [Milestone 2](docs/modern-practice/milestone-two.md) · [Milestone 3](docs/modern-practice/milestone-three.md)
 
