@@ -1,6 +1,6 @@
 # Modern Practice CRM — project handoff
 
-Updated: September 28, 2026. Prior published feature baseline: `29678d33e5bf8f9a60ecd91f7e156db07c24adc1` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). This handoff accompanies the seventh increment, audited match reversal; consult Git history for its publishing commit. Verify the current branch before continuing.
+Updated: October 4, 2026. Latest published feature baseline: `9e1189abe1c985b78849d6445577e71fbf35c0b4` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). The seventh increment, audited match reversal, is published. Subsequent documentation commits do not change the feature baseline. Verify the current branch before continuing.
 
 ## Objective and explicit requirements
 
@@ -46,7 +46,7 @@ Remaining backlog, with order and detailed design still proposals:
 
 - Financial workflow: split allocations, refund reconciliation, duplicate-payment resolution and reconciled patient balances. Matching does not verify bank settlement or prevent duplicate money entry through independent existing ledgers. Matching currently exposes the latest 100 eligible entries per ledger and 100 matches, with counts; larger-history search/pagination remains unfinished.
 - Appointment operations: corrections to attended events, provider/room availability, practice timezone settings, calendar connections and reminders. Existing conflict checks concern the patient, not provider/room capacity.
-- Team acceptance and hardening: complete team walkthrough, repeat current production build/restart verification, accessibility review, concurrent-request/load testing, and production/security/privacy readiness work. This CRM is not an EHR or a completed healthcare compliance program.
+- Team acceptance and hardening: complete team walkthrough, accessibility review, concurrent-request/load testing, and production/security/privacy readiness work. This CRM is not an EHR or a completed healthcare compliance program.
 - Planned product areas: Messages and Reviews and any live service integration need their own scoped implementation and authorization. Do not infer authorization to connect services or deploy from “continue.”
 
 The seventh increment is implemented; verification evidence is recorded below. No partial feature implementation remains. The original working folder has many uncommitted files because publication used a separate sanitized Git history; see the publishing warning below.
@@ -97,3 +97,7 @@ Open this project folder (or a current clone) and say:
 This is durable project context, not a saved transcript or a guarantee that every unrecorded conversation detail survives. If interrupted, record the partial work, outstanding checks and exact next action here before handing off when possible.
 
 Final post-restart HTTP verification passed: 33 isolation rejections, 14 authenticated pages, unchanged revenue and identical demo snapshot hash. The frontend was also restarted after its successful build.
+
+## October 4 resumption check
+
+GitHub main was confirmed at feature commit `9e1189a`. Docker Desktop was stopped; the existing six containers were started with their saved volumes. The first live check ran before the backend was ready. After readiness, all 33 isolation checks and 14 authenticated routes passed again; Harbor remained $1,100 and Cedar $700, with the same demo snapshot hash as September 28. Browser automation timed out, so a fresh visual check could not be completed on October 4; the successful reversal/rematch browser walkthrough above was performed September 28. No new feature changes or database reset were needed.
