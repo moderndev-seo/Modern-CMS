@@ -3,6 +3,7 @@ from django.urls import path
 from patients import views
 from patients.appointments import AppointmentDetail, AppointmentList
 from patients.billing import PatientBilling
+from patients.credits import CreateInvoiceCredit, ReverseInvoiceCredit
 from patients.matching import MatchPayments, ReversePaymentMatch
 
 urlpatterns = [
@@ -12,6 +13,8 @@ urlpatterns = [
     path("spend/", views.Spend.as_view()),
     path("<uuid:pk>/", views.PatientDetail.as_view()),
     path("<uuid:pk>/billing/", PatientBilling.as_view()),
+    path("<uuid:pk>/billing/credits/", CreateInvoiceCredit.as_view()),
+    path("<uuid:pk>/billing/credit-reversals/", ReverseInvoiceCredit.as_view()),
     path("<uuid:pk>/billing/matches/", MatchPayments.as_view()),
     path("<uuid:pk>/billing/reversals/", ReversePaymentMatch.as_view()),
     path("<uuid:pk>/tasks/", views.FollowupList.as_view()),

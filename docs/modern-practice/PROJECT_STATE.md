@@ -1,6 +1,6 @@
 # Modern Practice CRM — project handoff
 
-Updated: October 4, 2026. Prior published feature baseline: `9e1189abe1c985b78849d6445577e71fbf35c0b4` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). This handoff accompanies the eighth increment, receipt/refund coverage; consult Git history for its publishing commit. Verify the current branch before continuing.
+Updated: October 4, 2026. Prior published feature baseline: `823d12fddaf3a6d27544d35984fe11b75b9e94c9` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). This handoff accompanies the ninth increment, audited internal charge credits; consult Git history for its publishing commit. Verify the current branch before continuing.
 
 ## Objective and explicit requirements
 
@@ -18,7 +18,7 @@ Standing scope: no live advertising, messaging, review or payment integrations; 
 | --- | --- |
 | Milestone 1: patient journey and Growth | Implemented and tested; not a claim of production readiness |
 | Milestone 2: usability and demo acceptance preparation | Implemented; team acceptance remains a human activity |
-| Milestone 3: practice operations | In progress; eight increments delivered below |
+| Milestone 3: practice operations | In progress; nine increments delivered below |
 | Production rollout and live integrations | Not implemented or authorized by the continuation instruction |
 
 Milestone 1 uses existing Contact identity with a Patient relationship, immutable first-touch attribution, separate touches, journey events, payment/refund receipts, and chronological activity. Growth counts leads and distinct booked/treated patients, sums net receipt cash, and credits revenue to original source. Selected date ranges are UTC days, inclusive start through exclusive start of the day after end; cash uses receipt date. Unknown remains explicit. Missing spend is unavailable, and zero spend does not yield infinite ROAS. Current receipt currency is USD. Existing CRM remains reachable; Messages and Reviews are planned.
@@ -38,22 +38,38 @@ Milestone 3 delivered:
 
 8. Receipt/refund coverage: read-only grouping into valid active matches, unmatched receipts and changed matches needing review. Refunds follow the recorded original payment, and USD invoices show linked gross/refund/net collections. All records contribute regardless of pagination. No new schema, ledger writes, allocation editor or patient amount-due calculation.
 
+9. Audited internal charge credits: administrator-only positive USD credits on issued invoices, capped at remaining billed value, request-id retries, and full audit reversals. Migration `0006` adds forced-RLS append-only history and database validation. Billing review derives adjusted billed value; it does not change legacy invoice fields, issue documents, create refunds or calculate an amount owed. Changed invoice facts require review.
+
 Implementation choices (not additional user requirements): USD-only receipt reporting; first-touch revenue attribution; administrator-only billing matching; one-to-one equal-amount matches; permanent match and reversal history; UTC scheduling; reuse of Contact, Task, Invoice and Payment. Explain changes to these choices before implementing them.
+
+## Milestone completion approach
+
+The owner agreed to complete each milestone’s essential end-to-end workflow and reliability checks before expanding into the next, while deferring optional polish. Core billing reconciliation remains the priority before Messages and Reviews. Human team acceptance is still needed.
 
 ## Next work and remaining limitations
 
-**Recommended next increment, not an already approved detailed design:** define and implement explicit split allocations and invoice credit adjustments toward reconciled patient balances. Receipt/refund coverage is now available as the read-only baseline. Inspect both existing ledgers first; retain explicit matching and audit history, and never count invoice values as new collected cash. Split allocations and refund behavior need clear rules and focused permission/calculation tests before implementation.
+**Recommended next increment, not an already approved detailed design:** define and implement explicit split allocations toward reconciled patient balances. Receipt/refund coverage and internal charge credits are now available. Inspect both existing ledgers first; retain explicit matching and audit history, and never count invoice values as new collected cash. Split allocations and refund behavior need clear rules and focused permission/calculation tests before implementation.
 
 Remaining backlog, with order and detailed design still proposals:
 
-- Financial workflow: split allocations, refund reconciliation, duplicate-payment resolution and reconciled patient balances. Matching does not verify bank settlement or prevent duplicate money entry through independent existing ledgers. Matching currently exposes the latest 100 eligible entries per ledger and 100 matches, with counts; larger-history search/pagination remains unfinished.
+- Financial workflow: split allocations, explicit refund reconciliation, duplicate-payment resolution, credit-note documents/export integration and reconciled patient balances. Internal credits are currently included only in the Modern Practice billing review, not legacy invoice totals/paid/due/status or exports. Matching does not verify bank settlement or prevent duplicate money entry through independent existing ledgers. Matching currently exposes the latest 100 eligible entries per ledger and 100 matches, with counts; larger-history search/pagination remains unfinished.
 - Appointment operations: corrections to attended events, provider/room availability, practice timezone settings, calendar connections and reminders. Existing conflict checks concern the patient, not provider/room capacity.
 - Team acceptance and hardening: complete team walkthrough, accessibility review, concurrent-request/load testing, and production/security/privacy readiness work. This CRM is not an EHR or a completed healthcare compliance program.
 - Planned product areas: Messages and Reviews and any live service integration need their own scoped implementation and authorization. Do not infer authorization to connect services or deploy from “continue.”
 
-The eighth increment is implemented; verification evidence is recorded below. No partial feature implementation remains. The original working folder has many uncommitted files because publication used a separate sanitized Git history; see the publishing warning below.
+The ninth increment is implemented; verification evidence is recorded below. No partial feature implementation remains. The original working folder has many uncommitted files because publication used a separate sanitized Git history; see the publishing warning below.
 
-## Eighth-increment verification
+## Ninth-increment verification
+
+All 45 PostgreSQL patient tests passed, including five new credit tests for totals/caps, retry/reversal, input/status/currency, invoice drift, unchanged original records/Growth, tenant/admin protections, forced RLS, direct database bypass rejection, immutable audit history, rollback, generated snapshots and 101-entry totals. Ruff, migration drift, Django system checks and Svelte check (0 errors/warnings) passed. Changed billing routes passed ESLint. No fresh production build, concurrent-load test or full accessibility audit was run for this increment. The original email-settings deprecation warning remains.
+
+
+
+Browser verification on October 4 completed a fictional USD 100 credit and full reversal in Harbor: adjusted billed value changed from USD 1,100 back to USD 1,200; both audit entries remain. Original invoice fields and USD 1,100 net collections stayed unchanged. The initial reversal form interaction occurred before hydration finished; reopening the form after rendering completed succeeded. Live verification rejected 40 cross-practice requests (22 journey/matching, 4 match reversal, 7 credit, 7 appointment) and rendered 14 authenticated pages; Harbor/Cedar net collections remained USD 1,100/USD 700.
+
+Normal PostgreSQL and backend container restart preserved identical hashes/counts across 81 model/organization groups, including both credit audit entries. No volumes were removed. An initial HTTP check ran before Django was listening; the post-readiness rerun passed all 40 isolation checks and 14 authenticated pages, with unchanged revenue and demo snapshot hash. Browser reload also retained both audit entries and the restored USD 1,200 adjusted billed value.
+
+## Eighth-increment verification (historical)
 
 All 40 PostgreSQL patient tests passed; new coverage tests exercise refunds, reversal/rematching, drift, unchanged Growth, tenant/admin checks, foreign currency, empty states, 101 matches and invoice pagination. Ruff, migration drift, Svelte check (0 errors/warnings) and route ESLint passed. Live checks reconciled coverage totals in both practices, rejected 33 foreign-practice requests and rendered 14 authenticated pages. No new records or schema were required. A fresh build/restart, concurrent-load test and full accessibility audit were not repeated for this increment. The build/restart results below belong to the seventh increment.
 
@@ -79,7 +95,7 @@ Base demo: `docker compose exec backend python manage.py seed_modern_practice --
 
 Select a TEST practice at http://localhost:5181/org. For September 1–30, 2026, both seeds have 3 leads, 2 booked patients and 1 treated patient. Harbor net collected is $1,100 ($1,200 payment less $100 refund), with Google Ads source ROAS 5.50 on $200 spend. Cedar net collected is $700, with Google Ads ROAS 3.50. Overall ROAS can remain unavailable because another source lacks spend. Later manual demo records may change counts; do not reset them to match these seed values.
 
-Local demo checkpoint: Harbor Alex has two persisted match entries (one reversed, one active), one reversal audit entry, and no eligible unmatched pair; Cedar Alex remains available for a matching demo. These manual actions are not reproduced by cloning GitHub or rerunning the seed. Harbor also has a completed demo follow-up and a reopened scheduled appointment. The original organization and records remain preserved.
+Local demo checkpoint: Harbor Alex has two persisted match entries (one reversed, one active), one reversal audit entry, and no eligible unmatched pair; Cedar Alex remains available for a matching demo. Harbor also has one USD 100 internal credit and its full reversal (two permanent entries, zero active credit, adjusted billed USD 1,200); cash remains USD 1,100. These manual actions are not reproduced by cloning GitHub or rerunning the seed. Harbor also has a completed demo follow-up and a reopened scheduled appointment. The original organization and records remain preserved.
 
 - Patients: http://localhost:5181/patients
 - Growth: http://localhost:5181/growth?start=2026-09-01&end=2026-09-30

@@ -9,8 +9,9 @@ from rest_framework.response import Response
 from common.permissions import is_org_admin
 from contacts.access import assert_contact_access
 from invoices.models import UNPAID_STATUSES, Invoice, Payment
+from patients.credits import credit_summary
 from patients.matching import matches_current_records
-from patients.models import PaymentMatch, Receipt
+from patients.models import InvoiceCreditAdjustment, PaymentMatch, Receipt
 from patients.reconciliation import receipt_coverage
 from patients.views import PracticeView
 
@@ -81,6 +82,15 @@ class PatientBilling(PracticeView):
             )
             .order_by("-created_at", "id")
         )
+        credit_entries = list(
+            InvoiceCreditAdjustment.objects.filter(org=org, patient=patient)
+            .select_related("reversal", "created_by")
+            .order_by("-created_at", "id")
+        )
+        credit_states = {
+            str(invoice.id): credit_summary(invoice, credit_entries)
+            for invoice in selected
+        }
         coverage = receipt_coverage(patient, matches)
         receipt_choices = (
             Receipt.objects.filter(org=org, patient=patient, kind="payment")
@@ -105,6 +115,27 @@ class PatientBilling(PracticeView):
                 "scope": "All recorded dates; invoices linked to this patient's CRM contact. Explicit equal-amount payment matches do not allocate refunds or change either ledger.",
                 "receipt_currency": "USD",
                 "receipt_coverage": coverage,
+                "credit_history": {
+                    "count": len(credit_entries),
+                    "entries": [
+                        {
+                            "id": str(c.id),
+                            "invoice": c.snapshot["number"],
+                            "amount": c.amount,
+                            "reason": c.reason,
+                            "at": c.created_at,
+                            "actor": c.created_by.email
+                            if c.created_by
+                            else "Not recorded",
+                            "is_reversal": bool(c.reversal_of_id),
+                            "reversal_of": str(c.reversal_of_id)
+                            if c.reversal_of_id
+                            else None,
+                            "reversed": hasattr(c, "reversal"),
+                        }
+                        for c in credit_entries[:100]
+                    ],
+                },
                 "matching": {
                     "receipt_count": receipt_choices.count(),
                     "payment_count": payment_choices.count(),
@@ -172,6 +203,7 @@ class PatientBilling(PracticeView):
                 "results": [
                     {
                         "id": str(item.id),
+                        "credit_adjustment": credit_states[str(item.id)],
                         "number": item.invoice_number,
                         "title": item.invoice_title,
                         "status": item.status,

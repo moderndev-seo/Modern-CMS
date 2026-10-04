@@ -83,8 +83,8 @@
       <p class="mp-muted">
         These groups partition patient collections; they are not additional revenue. A changed or
         reversed match contributes nothing to linked totals. Refunds shown here do not issue an
-        invoice credit or change invoice paid/due values. Patient balances, split allocations and
-        credit adjustments are not implemented.
+        invoice credit or change invoice paid/due values. Final patient balances and split
+        allocations are not implemented. Charge credits are recorded separately below.
       </p>
     </div>
   </section>
@@ -242,6 +242,73 @@
               conversion is performed.
             </p>
           {/if}
+          <p>Active charge credits · USD {amount(invoice.credit_adjustment.active_credits)}</p>
+          {#if invoice.credit_adjustment.needs_review}
+            <p class="mp-error">
+              Credit needs review: the invoice changed after a credit was recorded. Adjusted billed
+              value is unavailable. Review the credit history before correcting it.
+            </p>
+          {:else if invoice.credit_adjustment.adjusted_billed !== null}
+            <p>
+              <strong
+                >Adjusted billed value · USD {amount(
+                  invoice.credit_adjustment.adjusted_billed
+                )}</strong
+              >
+            </p>
+            <p class="mp-muted">
+              Original billed value less active charge credits. This is not the amount owed: it does
+              not subtract payments or determine whether a refund is due. Original invoice paid/due
+              values remain separate.
+            </p>
+          {:else}
+            <p class="mp-muted">
+              Adjusted billed value unavailable for this invoice status or currency.
+            </p>
+          {/if}
+          {#if invoice.credit_adjustment.can_credit}
+            <details open={form?.action === 'credits' && form?.values?.invoice === invoice.id}>
+              <summary>Record charge credit</summary>
+              <form class="mp-form" method="POST" action="?/credit">
+                <input type="hidden" name="invoice" value={invoice.id} />
+                <input
+                  type="hidden"
+                  name="request_id"
+                  value={form?.action === 'credits' && form?.values?.invoice === invoice.id
+                    ? form?.values?.request_id
+                    : data.creditRequest}
+                />
+                <p>
+                  Record an approved reduction in this invoice's charge. This does not send a credit
+                  note, change the original invoice, refund money or reduce Growth revenue.
+                </p>
+                <label
+                  >Credit amount · USD<input
+                    name="amount"
+                    type="number"
+                    min="0.01"
+                    max={invoice.credit_adjustment.adjusted_billed}
+                    step="0.01"
+                    required
+                    value={form?.action === 'credits' && form?.values?.invoice === invoice.id
+                      ? form?.values?.amount
+                      : ''}
+                  /></label
+                >
+                <label
+                  >Reason for credit<textarea
+                    name="reason"
+                    maxlength="1000"
+                    required
+                    rows="2"
+                    value={form?.action === 'credits' && form?.values?.invoice === invoice.id
+                      ? form?.values?.reason
+                      : ''}></textarea></label
+                >
+                <button class="mp-button">Confirm charge credit</button>
+              </form>
+            </details>
+          {/if}
           {#if !invoice.ledger_matches_stored_paid}<p class="mp-error">
               Needs review: invoice payment entries differ from its stored paid amount. No automatic
               correction was made.
@@ -262,3 +329,63 @@
     </div>
   </section>
 </div>
+
+<section class="mp-page">
+  <section class="mp-panel">
+    <div class="mp-panel-heading">
+      <h2>Charge credit history</h2>
+      <span>{billing.credit_history.count} entries</span>
+    </div>
+    <div class="mp-form">
+      <p class="mp-muted">
+        Most recent 100 entries · UTC · Original entries and reversals are permanent. These are
+        internal charge adjustments, not cash refunds or issued credit-note documents.
+      </p>
+      {#each billing.credit_history.entries as credit (credit.id)}
+        <article class="mp-followup">
+          <strong
+            >{credit.invoice} · USD {amount(credit.amount)} · {credit.is_reversal
+              ? 'Credit reversal'
+              : credit.reversed
+                ? 'Reversed credit'
+                : 'Charge credit'}</strong
+          >
+          <p>{credit.reason}</p>
+          <p class="mp-muted">{dateTime(credit.at)} · {credit.actor}</p>
+          {#if !credit.is_reversal && !credit.reversed}
+            <details
+              open={form?.action === 'credit-reversals' && form?.values?.credit === credit.id}
+            >
+              <summary>Reverse this credit</summary>
+              <form class="mp-form" method="POST" action="?/reverseCredit">
+                <input type="hidden" name="credit" value={credit.id} />
+                <input
+                  type="hidden"
+                  name="request_id"
+                  value={form?.action === 'credit-reversals' && form?.values?.credit === credit.id
+                    ? form?.values?.request_id
+                    : data.reversalRequest}
+                />
+                <p>
+                  This reverses the full charge credit and preserves its history. It does not
+                  collect money or change Growth.
+                </p>
+                <label
+                  >Reason for credit reversal<textarea
+                    name="reason"
+                    maxlength="1000"
+                    required
+                    rows="2"
+                    value={form?.action === 'credit-reversals' && form?.values?.credit === credit.id
+                      ? form?.values?.reason
+                      : ''}></textarea></label
+                >
+                <button class="mp-button">Confirm credit reversal</button>
+              </form>
+            </details>
+          {/if}
+        </article>
+      {:else}<p>No charge credits recorded.</p>{/each}
+    </div>
+  </section>
+</section>

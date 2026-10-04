@@ -10,7 +10,7 @@ Docker builds Python and Node dependencies using the checked-in uv and pnpm lock
 
 `PUBLIC_DJANGO_API_URL=http://backend:8000` is the server-to-server Compose address used by the web app. The browser still opens http://localhost:5181. Google login is disabled unless deliberately configured. The console email backend prints login links locally; no mail service is connected.
 
-The default local administrator is `admin@localhost`. The web login uses an emailed link printed to backend logs. The separate Django admin login uses the generated `ADMIN_PASSWORD` in your private `.env.docker`. Do not paste passwords or sign-in links into issues or chat. Existing administrators are not overwritten on restart.
+The default local administrator is `admin@localhost`. The web login uses an emailed link printed to local service logs (`docker compose logs -f backend celery-worker`; queued email runs in the worker). The separate Django admin login uses the generated `ADMIN_PASSWORD` in your private `.env.docker`. Do not paste passwords or sign-in links into issues or chat. Existing administrators are not overwritten on restart.
 
 ## Fictional demo
 
@@ -73,3 +73,7 @@ The public snapshot keeps upstream license notices. Internal reference documents
 ## Optional payment-matching demo
 
 After the base seed, run `docker compose exec backend python manage.py seed_modern_practice_billing`. This adds fictional invoice-payment counterparts in the two TEST practices without adding receipts or changing Growth. It is safe to rerun and does not create matches automatically. Open a patient journey → Billing review and verify the matching pair before confirming. Matching requires an administrator, equal USD amounts and a reason. To rehearse a correction, expand **Correct this match**, enter a reason, and confirm reversal. Both records become eligible to match again; the original match and reversal remain in history. No money is refunded or created. Use fictional records for rehearsal. Run `docker compose up --build -d` after pulling this update so backend startup applies migration `patients.0005_payment_match_reversals`. This audit migration is deliberately irreversible: rollback must not erase correction history.
+
+## Internal charge-credit demo
+
+Pull the latest code and run `docker compose up --build -d` to apply `patients.0006_invoice_credit_adjustments`. In a TEST practice, open a patient’s Billing review, expand **Record charge credit** on an issued USD invoice, enter a fictional reason and amount, and confirm. Inspect adjusted billed value and **Charge credit history**. **Reverse this credit** creates a separate full reversal. These internal adjustments do not modify legacy invoice totals/paid/due/status, issue credit-note documents, or refund money. The audit migration is deliberately irreversible; do not roll back by deleting its table/history. Fresh seeds create no charge credits.

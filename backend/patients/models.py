@@ -203,3 +203,33 @@ class PaymentMatchReversal(BaseOrgModel):
     class Meta:
         db_table = "mp_payment_match_reversal"
         ordering = ["created_at", "id"]
+
+
+class InvoiceCreditAdjustment(BaseOrgModel):
+    """Charge-reduction evidence, separate from cash and the original invoice."""
+
+    patient = models.ForeignKey(
+        Patient, on_delete=models.PROTECT, related_name="invoice_credits"
+    )
+    invoice = models.ForeignKey(
+        "invoices.Invoice", on_delete=models.PROTECT, related_name="practice_credits"
+    )
+    request_id = models.UUIDField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    reason = models.CharField(max_length=1000)
+    snapshot = models.JSONField(default=dict)
+    reversal_of = models.OneToOneField(
+        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="reversal"
+    )
+
+    class Meta:
+        db_table = "mp_invoice_credit"
+        ordering = ["created_at", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="mp_invoice_credit_positive"
+            ),
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_invoice_credit_request"
+            ),
+        ]

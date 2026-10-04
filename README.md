@@ -20,7 +20,7 @@ Wait for migrations, administrator creation, and Django startup to finish. First
 docker compose exec backend python manage.py seed_modern_practice --member-email admin@localhost
 ```
 
-Open **http://localhost:5181/login**, enter **admin@localhost**, and request a sign-in link. With the console email backend, no email is sent: find the sign-in URL in `docker compose logs -f backend` and open it locally. Select either clearly labeled **TEST** practice at **http://localhost:5181/org**.
+Open **http://localhost:5181/login**, enter **admin@localhost**, and request a sign-in link. With the console email backend, no email is sent: find the sign-in URL in `docker compose logs -f backend celery-worker` and open it locally. Select either clearly labeled **TEST** practice at **http://localhost:5181/org**.
 
 - Web app: http://localhost:5181
 - API documentation: http://localhost:8000/swagger-ui/
@@ -41,6 +41,7 @@ Open **http://localhost:5181/login**, enter **admin@localhost**, and request a s
 - Administrator reopening of cancellations/no-shows without duplicating booking events.
 - Patient billing review with separate receipt totals and invoice ledgers by currency, plus explicit administrator matching of equal USD payment records. Audited reversals release mistaken matches for rematching. Split allocations and refund reconciliation remain unfinished.
 - Receipt-to-invoice coverage: linked payments and their refunds, unmatched receipts, and changed matches needing review, with totals across all records.
+- Audited internal invoice charge credits and full reversals, with adjusted billed values in patient billing review; no cash writes or automatic legacy-invoice changes.
 - Practice permissions, PostgreSQL RLS and cross-practice relationship checks.
 
 Existing CRM tools remain accessible. The inherited Flutter app is included as upstream source; Modern Practice's new screens are implemented in the web app, not in that mobile client.

@@ -38,6 +38,7 @@ ORG_SCOPED_TABLES = [
     "mp_journey_event",
     "mp_receipt",
     "mp_payment_match",
+    "mp_invoice_credit",
     "mp_payment_match_reversal",
     "mp_marketing_spend",
     # Core business entities

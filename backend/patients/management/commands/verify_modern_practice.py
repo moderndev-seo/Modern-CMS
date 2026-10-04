@@ -229,6 +229,67 @@ class Command(BaseCommand):
         self.stdout.write(
             f"{reversal_checks} match reversal HTTP isolation checks passed."
         )
+        credit_checks = 0
+        for key, session in sessions.items():
+            other = "cedar" if key == "harbor" else "harbor"
+            own_patient, foreign_patient = (
+                demo_id(key + ":alex"),
+                demo_id(other + ":alex"),
+            )
+            rejected = [
+                session.post(
+                    f"{root}{foreign_patient}/billing/credits/", json={}, timeout=90
+                ),
+                session.post(
+                    f"{root}{foreign_patient}/billing/credit-reversals/",
+                    json={},
+                    timeout=90,
+                ),
+                session.post(
+                    f"{root}{own_patient}/billing/credits/",
+                    json={
+                        "invoice": str(demo_id(other + ":billing:invoice")),
+                        "amount": "1",
+                        "reason": "MUST-BE-REJECTED foreign invoice",
+                        "request_id": str(demo_id("rejected-credit:" + key)),
+                    },
+                    timeout=90,
+                ),
+            ]
+            response = sessions[other].get(
+                f"{root}{foreign_patient}/billing/", timeout=90
+            )
+            response.raise_for_status()
+            before = response.json()["credit_history"]
+            for entry in before["entries"]:
+                if not entry["is_reversal"]:
+                    rejected.append(
+                        session.post(
+                            f"{root}{own_patient}/billing/credit-reversals/",
+                            json={
+                                "credit": entry["id"],
+                                "reason": "MUST-BE-REJECTED foreign credit",
+                                "request_id": str(
+                                    demo_id("rejected-credit-reversal:" + entry["id"])
+                                ),
+                            },
+                            timeout=90,
+                        )
+                    )
+            if any(response.status_code != 404 for response in rejected):
+                raise CommandError("Invoice credit cross-practice rejection failed.")
+            response = sessions[other].get(
+                f"{root}{foreign_patient}/billing/", timeout=90
+            )
+            response.raise_for_status()
+            if response.json()["credit_history"] != before:
+                raise CommandError(
+                    "Foreign credit history changed during rejection checks."
+                )
+            credit_checks += len(rejected)
+        self.stdout.write(
+            f"{credit_checks} invoice credit HTTP isolation checks passed."
+        )
         appointment_checks = 0
         for key, session in sessions.items():
             other = "cedar" if key == "harbor" else "harbor"
