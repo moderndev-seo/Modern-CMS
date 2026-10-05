@@ -1,6 +1,6 @@
 # Modern Practice CRM — project handoff
 
-Updated: October 4, 2026. Prior published feature baseline: `459071e791b6dbe8a9213cf6e52e2796396c5b2a` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). This handoff accompanies the eleventh increment, refund explanations and guarded recorded balances; consult Git history for its publishing commit. Verify the current branch before continuing.
+Updated: October 5, 2026. Prior published feature baseline: `5fdbea6af802902eff5f2ee66ac909b7b618c9e0` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). This handoff accompanies the twelfth increment, database refund-budget protection; consult Git history for its publishing commit. Verify the current branch before continuing.
 
 ## Objective and explicit requirements
 
@@ -18,7 +18,7 @@ Standing scope: no live advertising, messaging, review or payment integrations; 
 | --- | --- |
 | Milestone 1: patient journey and Growth | Implemented and tested; not a claim of production readiness |
 | Milestone 2: usability and demo acceptance preparation | Implemented; team acceptance remains a human activity |
-| Milestone 3: practice operations | In progress; eleven increments delivered below |
+| Milestone 3: practice operations | In progress; twelve increments delivered below |
 | Production rollout and live integrations | Not implemented or authorized by the continuation instruction |
 
 Milestone 1 uses existing Contact identity with a Patient relationship, immutable first-touch attribution, separate touches, journey events, payment/refund receipts, and chronological activity. Growth counts leads and distinct booked/treated patients, sums net receipt cash, and credits revenue to original source. Selected date ranges are UTC days, inclusive start through exclusive start of the day after end; cash uses receipt date. Unknown remains explicit. Missing spend is unavailable, and zero spend does not yield infinite ROAS. Current receipt currency is USD. Existing CRM remains reachable; Messages and Reviews are planned.
@@ -44,6 +44,8 @@ Milestone 3 delivered:
 
 11. Refund explanations and recorded balances: migration `0008` extends existing allocation versions with capped, practice-validated refund lines. A read-only balance view combines issued USD charges, valid internal credits and explicitly allocated net cash only after reconciliation checks pass; otherwise balances are null with reasons. Refunds are never subtracted twice.
 
+12. Database refund-budget protection: migration `0009` rejects excessive refund inserts/updates, reductions of a payment below its refunds, refund reassignment to an insufficient payment, and changes to the patient/practice/kind of a refunded payment. Parent-row serialization protects concurrent writers, including direct database writes. No new tables or existing-record changes. This is a prerequisite safeguard, not the pending cash-correction workflow.
+
 Implementation choices (not additional user requirements): USD-only receipt reporting; first-touch revenue attribution; administrator-only billing matching; one-to-one equal-amount matches; permanent match and reversal history; UTC scheduling; reuse of Contact, Task, Invoice and Payment. Explain changes to these choices before implementing them.
 
 ## Milestone completion approach
@@ -61,9 +63,15 @@ Remaining backlog, with order and detailed design still proposals:
 - Team acceptance and hardening: complete team walkthrough, accessibility review, concurrent-request/load testing, and production/security/privacy readiness work. This CRM is not an EHR or a completed healthcare compliance program.
 - Planned product areas: Messages and Reviews and any live service integration need their own scoped implementation and authorization. Do not infer authorization to connect services or deploy from “continue.”
 
-The eleventh increment is implemented and verified below. No partial feature implementation remains. The publishing commit accompanies this handoff. The original working folder has many uncommitted files because publication used a separate sanitized Git history; see the publishing warning below.
+The twelfth increment adds a prerequisite database safeguard; audited cash corrections remain the next feature. Verification is recorded below. No partial feature implementation remains. The publishing commit accompanies this handoff. The original working folder has many uncommitted files because publication used a separate sanitized Git history; see the publishing warning below.
 
-## Eleventh-increment verification
+## Twelfth-increment verification
+
+All 63 PostgreSQL patient tests passed, including five new refund-guard cases covering exact caps, inserts/updates, parent reductions, relinking, tenant rejection and competing writers at READ COMMITTED and REPEATABLE READ. Tests use the separate test database and a non-bypass role. Migration `0009` applied locally; migration drift, Django system checks, Ruff and whitespace checks passed. Browser review retained Harbor's USD 1,600 billed, USD 1,100 net allocated cash and USD 500 recorded balance. The existing email-settings deprecation warning remains. A temporary approval-service capacity failure delayed the lint command; retry through normal approval succeeded. No frontend source changed, so frontend compilation/build and full accessibility testing were not repeated. The two-writer test is targeted concurrency verification, not a load test. The focused five-case rerun also passed after adding an assertion that every stored field on the original payment remains unchanged. Live checks passed 52 isolation rejections and 18 authenticated pages with unchanged Harbor/Cedar revenue. Migration plus normal PostgreSQL/backend restart preserved all 84 model/organization fingerprints, including the original practice. No volumes were removed.
+
+The first post-restart HTTP verification started before the backend listener was ready and received connection refused; readiness was subsequently confirmed before retrying. The post-readiness run passed all 52 isolation rejections and 18 authenticated routes with the same journey/Growth snapshot hash. Browser reload also retained the USD 500 recorded balance.
+
+## Eleventh-increment verification (historical)
 
 All 58 PostgreSQL patient tests passed, including seven new refund/balance tests. Ruff, changed-route ESLint, migration drift, Django system checks and Svelte check (0 errors/warnings) passed. The first migration attempt failed on SQL CASE syntax and rolled back; the corrected migration applied successfully. Browser verified unavailable → available balance after explaining Harbor’s existing USD 100 refund: USD 1,600 billed less USD 1,100 net cash = USD 500 recorded balance. The existing email-settings deprecation warning remains. Live verification passed 52 isolation rejections and 18 authenticated pages, including balance availability/arithmetic and refund-link rejection. Restart fingerprints matched across 84 model/organization groups in all three practices, including four allocation versions. No volumes were removed. Production build passed with the Node adapter (empty generated env chunk warning); post-restart HTTP verification passed all 52 isolation rejections and 18 authenticated routes with unchanged revenue and journey/Growth hash. Browser reload retained the USD 500 recorded balance. No concurrent-load test or full accessibility audit was performed.
 
