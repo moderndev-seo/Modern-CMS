@@ -261,3 +261,34 @@ class ReceiptAllocation(BaseOrgModel):
                 name="mp_allocation_revision_positive",
             ),
         ]
+
+
+class ReceiptCorrection(BaseOrgModel):
+    """Permanent amount-correction evidence; never represents a money transfer."""
+
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT)
+    receipt = models.ForeignKey(Receipt, on_delete=models.PROTECT)
+    revision = models.PositiveIntegerField()
+    request_id = models.UUIDField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    reason = models.CharField(max_length=1000)
+    snapshot = models.JSONField(default=dict)
+
+    class Meta:
+        db_table = "mp_receipt_correction"
+        ordering = ["created_at", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_cash_correction_request"
+            ),
+            models.UniqueConstraint(
+                fields=["receipt", "revision"], name="mp_cash_correction_revision"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="mp_cash_correction_positive"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(revision__gt=0),
+                name="mp_cash_correction_revision_positive",
+            ),
+        ]

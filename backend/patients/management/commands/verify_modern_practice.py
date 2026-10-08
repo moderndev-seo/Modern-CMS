@@ -3,6 +3,7 @@
 import hashlib
 import json
 from decimal import Decimal
+from uuid import uuid4
 
 import requests
 from django.core.management.base import BaseCommand, CommandError
@@ -187,6 +188,10 @@ class Command(BaseCommand):
                         f"/patients/{demo_id(key + ':alex')}/balances",
                         "Invoice reconciliation",
                     ),
+                    (
+                        f"/patients/{demo_id(key + ':alex')}/corrections",
+                        "Correction history",
+                    ),
                     ("/practice-modules/reviews", "Not implemented"),
                 ):
                     page = front.get(
@@ -197,7 +202,7 @@ class Command(BaseCommand):
                             f"Frontend page {path} failed: HTTP {page.status_code}"
                         )
                 self.stdout.write(
-                    "Nine authenticated frontend routes rendered successfully over HTTP."
+                    "Ten authenticated frontend routes rendered successfully over HTTP."
                 )
         reversal_checks = 0
         for key, session in sessions.items():
@@ -441,6 +446,45 @@ class Command(BaseCommand):
             balance_checks += len(rejected)
         self.stdout.write(
             f"{balance_checks} balance/refund HTTP isolation checks passed; availability and arithmetic verified."
+        )
+        correction_checks = 0
+        for key, session in sessions.items():
+            other = "cedar" if key == "harbor" else "harbor"
+            own_patient = demo_id(key + ":alex")
+            foreign_patient = demo_id(other + ":alex")
+            own_url = f"{root}{own_patient}/corrections/"
+            foreign_url = f"{root}{foreign_patient}/corrections/"
+            before = session.get(own_url, timeout=90)
+            before.raise_for_status()
+            foreign = sessions[other].get(foreign_url, timeout=90)
+            foreign.raise_for_status()
+            rejected = [
+                session.get(foreign_url, timeout=90),
+                session.post(foreign_url, json={}, timeout=90),
+            ]
+            for receipt in foreign.json()["receipts"]:
+                rejected.append(
+                    session.post(
+                        own_url,
+                        json={
+                            "receipt": receipt["id"],
+                            "revision": receipt["revision"],
+                            "request_id": str(uuid4()),
+                            "amount": "1.00",
+                            "reason": "TEST foreign-link rejection",
+                        },
+                        timeout=90,
+                    )
+                )
+            if any(response.status_code != 404 for response in rejected):
+                raise CommandError("Correction cross-practice rejection failed.")
+            after = session.get(own_url, timeout=90)
+            after.raise_for_status()
+            if before.json() != after.json():
+                raise CommandError("Rejected correction changed cash or audit history.")
+            correction_checks += len(rejected)
+        self.stdout.write(
+            f"{correction_checks} cash correction HTTP isolation checks passed."
         )
         appointment_checks = 0
         for key, session in sessions.items():

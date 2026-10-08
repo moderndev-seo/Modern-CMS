@@ -50,10 +50,16 @@
             : event.notes,
         amount: null
       })),
+      ...(patient.corrections || []).map((/** @type {any} */ entry) => ({
+        ...entry,
+        title: 'Recorded amount corrected · no money moved',
+        description: `${entry.reference}: ${usd(entry.before)} → ${usd(entry.after)} · ${entry.reason}`,
+        amount: null
+      })),
       ...patient.receipts.map((receipt) => ({
         ...receipt,
         title: receipt.kind === 'payment' ? 'Payment received' : 'Refund issued',
-        description: `${receipt.reference}${receipt.notes ? ' · ' + receipt.notes : ''}`,
+        description: `${receipt.reference}${(patient.corrections || []).some((/** @type {any} */ entry) => entry.receipt === receipt.id) ? ' · Current corrected amount; see correction history' : ''}${receipt.notes ? ' · ' + receipt.notes : ''}`,
         amount: (receipt.kind === 'refund' ? '-' : '') + usd(receipt.amount)
       }))
     ].sort((a, b) => new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime())

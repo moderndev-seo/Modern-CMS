@@ -5,6 +5,7 @@ from patients.allocations import PatientAllocations
 from patients.appointments import AppointmentDetail, AppointmentList
 from patients.balances import PatientBalances
 from patients.billing import PatientBilling
+from patients.corrections import PatientCorrections
 from patients.credits import CreateInvoiceCredit, ReverseInvoiceCredit
 from patients.matching import MatchPayments, ReversePaymentMatch
 
@@ -16,6 +17,7 @@ urlpatterns = [
     path("<uuid:pk>/", views.PatientDetail.as_view()),
     path("<uuid:pk>/balances/", PatientBalances.as_view()),
     path("<uuid:pk>/allocations/", PatientAllocations.as_view()),
+    path("<uuid:pk>/corrections/", PatientCorrections.as_view()),
     path("<uuid:pk>/billing/", PatientBilling.as_view()),
     path("<uuid:pk>/billing/credits/", CreateInvoiceCredit.as_view()),
     path("<uuid:pk>/billing/credit-reversals/", ReverseInvoiceCredit.as_view()),

@@ -156,6 +156,9 @@ class PatientDetail(PracticeView):
         )
         data["events"] = EventSerializer(events, many=True).data
         data["receipts"] = ReceiptSerializer(receipts, many=True).data
+        from patients.corrections import correction_history
+
+        data["corrections"] = correction_history(request.profile.org, patient)
         data["net_revenue"] = sum(
             (r.amount if r.kind == "payment" else -r.amount for r in receipts), 0
         )

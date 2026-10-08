@@ -19,6 +19,9 @@
   <a href={resolve(asInternalPath(`/patients/${billing.patient_id}/balances`))}
     >Review recorded balances →</a
   >
+  <a href={resolve(asInternalPath(`/patients/${billing.patient_id}/corrections`))}
+    >Correct recorded cash amounts →</a
+  >
   <header class="mp-header">
     <div>
       <p class="mp-eyebrow">Patient finances · All recorded dates</p>
