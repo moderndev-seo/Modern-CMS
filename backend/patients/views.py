@@ -154,7 +154,11 @@ class PatientDetail(PracticeView):
         data["can_create_followup"] = has_contact_access(
             request.profile, patient.contact
         )
-        data["events"] = EventSerializer(events, many=True).data
+        from patients.appointments import attendance_projection
+
+        data["events"], data["appointment_corrections"] = attendance_projection(
+            request.profile.org, patient, EventSerializer(events, many=True).data
+        )
         data["receipts"] = ReceiptSerializer(receipts, many=True).data
         from patients.corrections import correction_history
 
@@ -176,14 +180,19 @@ class PatientDetail(PracticeView):
 class EventList(PracticeView):
     def get(self, request, pk):
         patient = self.patient(request, pk)
-        return Response(
+        from patients.appointments import attendance_projection
+
+        events, _ = attendance_projection(
+            request.profile.org,
+            patient,
             EventSerializer(
                 JourneyEvent.objects.filter(
                     org=request.profile.org, patient=patient
                 ).order_by("occurred_at"),
                 many=True,
-            ).data
+            ).data,
         )
+        return Response(events)
 
     def post(self, request, pk):
         patient = self.patient(request, pk)

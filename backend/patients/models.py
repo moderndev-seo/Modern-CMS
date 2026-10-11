@@ -273,6 +273,7 @@ class ReceiptCorrection(BaseOrgModel):
     request_id = models.UUIDField()
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     reference = models.CharField(max_length=100, null=True, blank=True)
+    occurred_at = models.DateTimeField(null=True, blank=True)
     reason = models.CharField(max_length=1000)
     snapshot = models.JSONField(default=dict)
 

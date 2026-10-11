@@ -1,4 +1,5 @@
 <script>
+  import FinancialPages from '$lib/components/modern-practice/FinancialPages.svelte';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '$lib/utils/paths.js';
   import { dateTime } from '$lib/modern-practice.js';
@@ -31,6 +32,7 @@
       <p>{info.patient_name}</p>
     </div>
   </header>
+  <FinancialPages pages={info.pages} />
   {#if data.org.name.startsWith('TEST -')}<p class="mp-demo">
       Fictional test practice · demonstration records only
     </p>{/if}
@@ -78,12 +80,15 @@
     <div class="mp-panel-heading"><h2>Choose a receipt</h2></div>
     <div class="mp-form">
       <p class="mp-muted">
-        Most recent 100 of {info.receipt_count} payment receipts. All records contribute to totals.
+        Showing {info.receipts.length} of {info.receipt_count} payment receipts. All records contribute
+        to totals.
       </p>
       {#each info.receipts as receipt (receipt.id)}<article class="mp-followup">
           <a
             href={resolve(
-              asInternalPath(`/patients/${data.patientId}/allocations?receipt=${receipt.id}`)
+              asInternalPath(
+                `/patients/${data.patientId}/allocations?receipts_page=${info.pages.find((/** @type {any} */ p) => p.parameter === 'receipts_page')?.page || 1}&receipt=${receipt.id}`
+              )
             )}>{receipt.reference}</a
           >
           <p>
@@ -108,8 +113,8 @@
           per receipt.
         </p>
         <p class="mp-muted">
-          Invoice chooser: most recent 100 of {info.invoice_count} linked invoices. Only issued USD invoices
-          are eligible. History keeps invoice names even if records later change.
+          Invoice chooser: all {info.invoice_count} linked invoices. Only issued USD invoices are eligible.
+          History keeps invoice names even if records later change.
         </p>
         <form method="POST" class="mp-form">
           <input type="hidden" name="receipt" value={selected.id} />
@@ -248,8 +253,8 @@
     <div class="mp-panel-heading"><h2>Allocation history</h2></div>
     <div class="mp-form">
       <p class="mp-muted">
-        Latest 100 of {info.history_count} versions · UTC · History is permanent. Only the latest version
-        of each receipt may contribute to current totals.
+        Showing {info.history.length} of {info.history_count} versions · UTC · History is permanent. Only
+        the latest version of each receipt may contribute to current totals.
       </p>
       {#each info.history as entry (entry.id)}<article class="mp-followup">
           <h3>{entry.receipt} · Version {entry.revision}</h3>

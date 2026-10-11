@@ -5,7 +5,10 @@ import { readPractice } from '$lib/server/modern-practice.js';
 
 export async function load(event) {
   return {
-    exclusions: await readPractice(event, `${event.params.id}/exclusions/`),
+    exclusions: await readPractice(
+      event,
+      `${event.params.id}/exclusions/?${event.url.searchParams}`
+    ),
     patientId: event.params.id,
     requestId: randomUUID(),
     saved: event.url.searchParams.get('saved') === '1'

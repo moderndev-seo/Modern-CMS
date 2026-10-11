@@ -196,6 +196,10 @@ class Command(BaseCommand):
                         f"/patients/{demo_id(key + ':alex')}/exclusions",
                         "Decision history",
                     ),
+                    (
+                        f"/patients/{demo_id(key + ':alex')}/statement",
+                        "Internal financial statement",
+                    ),
                     ("/practice-modules/reviews", "Not implemented"),
                 ):
                     page = front.get(
@@ -206,7 +210,7 @@ class Command(BaseCommand):
                             f"Frontend page {path} failed: HTTP {page.status_code}"
                         )
                 self.stdout.write(
-                    "Eleven authenticated frontend routes rendered successfully over HTTP."
+                    "Twelve authenticated frontend routes rendered successfully over HTTP."
                 )
         reversal_checks = 0
         for key, session in sessions.items():
@@ -493,6 +497,19 @@ class Command(BaseCommand):
                         timeout=90,
                     )
                 )
+                rejected.append(
+                    session.post(
+                        own_url,
+                        json={
+                            "receipt": receipt["id"],
+                            "revision": receipt["revision"],
+                            "request_id": str(uuid4()),
+                            "occurred_at": "2026-09-02T12:00:00Z",
+                            "reason": "TEST foreign date correction rejection",
+                        },
+                        timeout=90,
+                    )
+                )
             if any(response.status_code != 404 for response in rejected):
                 raise CommandError("Correction cross-practice rejection failed.")
             after = session.get(own_url, timeout=90)
@@ -548,6 +565,24 @@ class Command(BaseCommand):
         self.stdout.write(
             f"{exclusion_checks} duplicate exclusion HTTP isolation checks passed."
         )
+        statement_checks = 0
+        for key, session in sessions.items():
+            other = "cedar" if key == "harbor" else "harbor"
+            own = session.get(f"{root}{demo_id(key + ':alex')}/statement/", timeout=90)
+            own.raise_for_status()
+            expected = 1100 if key == "harbor" else 700
+            if float(own.json()["cash"]["net_collected"]) != expected:
+                raise CommandError("Statement collections do not reconcile.")
+            for suffix in ("", "?download=csv"):
+                foreign = session.get(
+                    f"{root}{demo_id(other + ':alex')}/statement/{suffix}", timeout=90
+                )
+                if foreign.status_code != 404:
+                    raise CommandError("Statement leaked foreign-practice records.")
+                statement_checks += 1
+        self.stdout.write(
+            f"{statement_checks} statement HTTP isolation checks passed; collections reconcile."
+        )
         appointment_checks = 0
         for key, session in sessions.items():
             other = "cedar" if key == "harbor" else "harbor"
@@ -566,6 +601,16 @@ class Command(BaseCommand):
                 rejected.extend(
                     [
                         session.get(path, timeout=90),
+                        session.patch(
+                            path,
+                            json={
+                                "action": "outcome_corrected",
+                                "outcome": "attended",
+                                "revision": appointment["revision"],
+                                "reason": "TEST foreign outcome correction rejection",
+                            },
+                            timeout=90,
+                        ),
                         session.patch(
                             path,
                             json={

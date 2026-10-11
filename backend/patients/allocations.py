@@ -12,6 +12,7 @@ from invoices.models import Invoice
 from patients.appointments import Conflict
 from patients.credits import CreditView, StrictInput, credit_snapshot
 from patients.models import Receipt, ReceiptAllocation
+from patients.pagination import window
 
 ZERO = Decimal("0.00")
 
@@ -110,6 +111,7 @@ class AllocationInput(StrictInput):
 
 class PatientAllocations(CreditView):
     def get(self, request, pk):
+        pages = []
         patient = self.credit_patient(request, pk)
         org = request.profile.org
         receipts = list(
@@ -128,7 +130,7 @@ class PatientAllocations(CreditView):
         plans = list(
             ReceiptAllocation.objects.filter(org=org, patient=patient)
             .select_related("created_by")
-            .order_by("-created_at", "-revision")
+            .order_by("-created_at", "-revision", "id")
         )
         latest = {}
         for plan in plans:
@@ -219,6 +221,7 @@ class PatientAllocations(CreditView):
             )
         return Response(
             {
+                "pages": pages,
                 "patient_name": f"{patient.contact.first_name} {patient.contact.last_name}".strip(),
                 "totals": totals,
                 "by_invoice": by_invoice,
@@ -226,7 +229,9 @@ class PatientAllocations(CreditView):
                 "refund_totals": refund_totals,
                 "review_count": review_count,
                 "receipt_count": len(rows),
-                "receipts": rows[:100],
+                "receipts": window(
+                    request, "receipts", rows, pages, "Allocation receipts"
+                ),
                 "invoice_count": len(invoices),
                 "invoices": [
                     {
@@ -235,7 +240,7 @@ class PatientAllocations(CreditView):
                         "eligible": i.currency == "USD"
                         and i.status not in ("Draft", "Pending", "Cancelled"),
                     }
-                    for i in list(invoices.values())[:100]
+                    for i in invoices.values()
                 ],
                 "history_count": len(plans),
                 "history": [
@@ -250,7 +255,9 @@ class PatientAllocations(CreditView):
                         "refund_lines": p.refund_lines,
                         "invoices": p.snapshot["invoices"],
                     }
-                    for p in plans[:100]
+                    for p in window(
+                        request, "history", plans, pages, "Allocation history"
+                    )
                 ],
             }
         )

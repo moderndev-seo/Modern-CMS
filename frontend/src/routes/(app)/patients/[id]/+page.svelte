@@ -43,23 +43,33 @@
       },
       ...patient.events.map((event) => ({
         ...event,
-        title: eventKinds.find(([key]) => key === event.kind)?.[1],
+        title: `${eventKinds.find(([key]) => key === event.kind)?.[1]}${event.superseded ? ' · Superseded by appointment correction' : ''}`,
         description:
           event.kind === 'touch'
             ? `${sourceLabel(event.source)} · ${event.campaign || 'No campaign recorded'}${event.landing_page ? ' · ' + event.landing_page : ''}${event.notes ? ' · ' + event.notes : ''}`
             : event.notes,
         amount: null
       })),
+      ...(patient.appointment_corrections || []).map((/** @type {any} */ entry) => ({
+        ...entry,
+        title: 'Appointment outcome corrected',
+        description: `${entry.title}: ${entry.before} → ${entry.after} · ${entry.reason} · ${entry.actor}`,
+        amount: null
+      })),
       ...(patient.corrections || []).map((/** @type {any} */ entry) => ({
         ...entry,
         title:
-          entry.field === 'reference'
-            ? 'Recorded reference corrected · no money moved'
-            : 'Recorded amount corrected · no money moved',
+          entry.field === 'occurred_at'
+            ? 'Recorded date corrected · no money moved'
+            : entry.field === 'reference'
+              ? 'Recorded reference corrected · no money moved'
+              : 'Recorded amount corrected · no money moved',
         description:
-          entry.field === 'reference'
-            ? `${entry.before_reference} → ${entry.after_reference} · ${entry.reason}`
-            : `${entry.reference}: ${usd(entry.before)} → ${usd(entry.after)} · ${entry.reason}`,
+          entry.field === 'occurred_at'
+            ? `${dateTime(entry.before_date)} → ${dateTime(entry.after_date)} · ${entry.reason}`
+            : entry.field === 'reference'
+              ? `${entry.before_reference} → ${entry.after_reference} · ${entry.reason}`
+              : `${entry.reference}: ${usd(entry.before)} → ${usd(entry.after)} · ${entry.reason}`,
         amount: null
       })),
       ...(patient.exclusions || []).map((/** @type {any} */ entry) => ({
@@ -77,12 +87,14 @@
           : receipt.kind === 'payment'
             ? 'Payment received'
             : 'Refund issued',
-        description: `${receipt.reference}${(patient.corrections || []).some((/** @type {any} */ entry) => entry.receipt === receipt.id && entry.field !== 'reference') ? ' · Current corrected amount; see correction history' : ''}${receipt.notes ? ' · ' + receipt.notes : ''}`,
+        description: `${receipt.reference}${(patient.corrections || []).some((/** @type {any} */ entry) => entry.receipt === receipt.id && entry.field === 'amount') ? ' · Current corrected amount; see correction history' : ''}${receipt.notes ? ' · ' + receipt.notes : ''}`,
         amount: (receipt.kind === 'refund' ? '-' : '') + usd(receipt.amount)
       }))
     ].sort((a, b) => new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime())
   );
-  let completed = $derived(new Set(patient.events.map((event) => event.kind)));
+  let completed = $derived(
+    new Set(patient.events.filter((event) => !event.superseded).map((event) => event.kind))
+  );
   let payments = $derived(refundablePayments(patient.receipts));
   let refundable = $derived(payments.some((payment) => payment.remaining > 0));
 </script>

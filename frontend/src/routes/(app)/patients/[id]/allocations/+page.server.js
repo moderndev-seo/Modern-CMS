@@ -5,7 +5,10 @@ import { readPractice } from '$lib/server/modern-practice.js';
 
 export async function load(event) {
   return {
-    allocations: await readPractice(event, `${event.params.id}/allocations/`),
+    allocations: await readPractice(
+      event,
+      `${event.params.id}/allocations/?${event.url.searchParams}`
+    ),
     patientId: event.params.id,
     selectedReceipt: event.url.searchParams.get('receipt'),
     requestId: randomUUID(),

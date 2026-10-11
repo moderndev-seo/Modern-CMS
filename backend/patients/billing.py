@@ -12,6 +12,7 @@ from invoices.models import UNPAID_STATUSES, Invoice, Payment
 from patients.credits import credit_summary
 from patients.matching import matches_current_records
 from patients.models import InvoiceCreditAdjustment, PaymentMatch, Receipt
+from patients.pagination import window
 from patients.reconciliation import receipt_coverage
 from patients.views import PracticeView
 
@@ -21,6 +22,7 @@ ZERO = Decimal("0.00")
 
 class PatientBilling(PracticeView):
     def get(self, request, pk):
+        pages = []
         patient = self.patient(request, pk)
         if not is_org_admin(request.profile):
             raise PermissionDenied("Only practice administrators may review billing.")
@@ -113,6 +115,7 @@ class PatientBilling(PracticeView):
         return Response(
             {
                 "patient_id": str(patient.id),
+                "pages": pages,
                 "patient_name": f"{patient.contact.first_name} {patient.contact.last_name}".strip(),
                 "scope": "All recorded dates; invoices linked to this patient's CRM contact. Explicit equal-amount payment matches do not allocate refunds or change either ledger.",
                 "receipt_currency": "USD",
@@ -135,7 +138,13 @@ class PatientBilling(PracticeView):
                             else None,
                             "reversed": hasattr(c, "reversal"),
                         }
-                        for c in credit_entries[:100]
+                        for c in window(
+                            request,
+                            "credits",
+                            credit_entries,
+                            pages,
+                            "Charge credit history",
+                        )
                     ],
                 },
                 "matching": {
@@ -149,7 +158,13 @@ class PatientBilling(PracticeView):
                             "amount": r.amount,
                             "at": r.occurred_at,
                         }
-                        for r in receipt_choices[:100]
+                        for r in window(
+                            request,
+                            "receipts",
+                            receipt_choices,
+                            pages,
+                            "Matching receipts",
+                        )
                     ],
                     "invoice_payments": [
                         {
@@ -159,7 +174,13 @@ class PatientBilling(PracticeView):
                             "amount": p.amount,
                             "date": p.payment_date,
                         }
-                        for p in payment_choices[:100]
+                        for p in window(
+                            request,
+                            "payments",
+                            payment_choices,
+                            pages,
+                            "Matching invoice payments",
+                        )
                     ],
                     "matches": [
                         {
@@ -186,7 +207,9 @@ class PatientBilling(PracticeView):
                             if hasattr(m, "reversal")
                             else None,
                         }
-                        for m in matches[:100]
+                        for m in window(
+                            request, "matches", matches, pages, "Payment match history"
+                        )
                     ],
                 },
                 "payments": receipts.get("payment", ZERO),

@@ -24,6 +24,7 @@
     booked: 'Booked',
     rescheduled: 'Rescheduled',
     reopened: 'Reopened',
+    outcome_corrected: 'Outcome corrected',
     attended: 'Attended',
     cancelled: 'Cancelled',
     no_show: 'No-show'
@@ -218,10 +219,44 @@
             </form>
           {:else}<p class="mp-form mp-muted">
               This appointment is closed. {selected.status === 'attended'
-                ? 'Corrections to recorded attendance are not supported yet.'
+                ? 'Only a practice administrator may correct recorded attendance.'
                 : 'Only a practice administrator can reopen a cancellation or no-show.'}
               Book a new appointment for a separate visit.
             </p>{/if}
+          {#if selected.can_correct_outcome}
+            <details class="mp-form">
+              <summary>Correct a mistaken outcome</summary>
+              <form
+                method="POST"
+                action={`?/change&appointment=${selected.id}&page=${data.appointments.page}`}
+                class="mp-form"
+              >
+                <input type="hidden" name="appointment_id" value={selected.id} />
+                <input type="hidden" name="revision" value={selected.revision} />
+                <input type="hidden" name="action" value="outcome_corrected" />
+                <label
+                  >Correct outcome<select name="outcome" required>
+                    <option value="">Choose an outcome</option>
+                    {#each ['attended', 'no_show', 'cancelled'] as outcome (outcome)}
+                      {#if outcome !== selected.status}<option value={outcome}
+                          >{labels[outcome]}</option
+                        >{/if}
+                    {/each}
+                  </select></label
+                >
+                <label
+                  >Reason for outcome correction<textarea name="reason" required maxlength="1000"
+                  ></textarea></label
+                >
+                <p>
+                  The original outcome stays in history. Superseded attendance no longer marks the
+                  patient as attended; a corrected attendance is recorded now. Booking counts,
+                  treatment and revenue do not change. Use Reopen for a new scheduled time.
+                </p>
+                <button class="mp-button">Save outcome correction</button>
+              </form>
+            </details>
+          {/if}
         </section>
         <section class="mp-panel">
           <div class="mp-panel-heading">
@@ -235,7 +270,7 @@
                   <time>{dateTime(entry.at)}</time>
                   <h3>{labels[entry.action]}</h3>
                   <p>{entry.reason}</p>
-                  {#if entry.action === 'reopened'}<p>
+                  {#if entry.action === 'reopened' || entry.action === 'outcome_corrected'}<p>
                       {labels[entry.before.status]} → {labels[entry.after.status]}
                     </p>{/if}
                   <p class="mp-muted">Recorded by {entry.actor}</p>

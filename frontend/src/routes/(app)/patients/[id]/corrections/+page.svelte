@@ -1,4 +1,5 @@
 <script>
+  import FinancialPages from '$lib/components/modern-practice/FinancialPages.svelte';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '$lib/utils/paths.js';
   import { usd, dateTime } from '$lib/modern-practice.js';
@@ -19,15 +20,18 @@
       <p>{info.patient_name}</p>
     </div>
   </header>
+  <FinancialPages pages={info.pages} />
   {#if data.org.name.startsWith('TEST -')}<p class="mp-demo">
       Fictional test practice · demonstration records only
     </p>{/if}
   <p class="mp-notice">
-    Correct an incorrectly entered amount or reference, one field at a time. No money is collected
-    or refunded. Amount changes recalculate the original reporting period and source. Reference
-    changes leave collections and reporting dates unchanged. Every prior value, reason,
+    Correct an incorrectly entered amount, reference or date, one field at a time. No money is
+    collected or refunded. Amount changes recalculate the original reporting period and source.
+    Reference changes leave collections and reporting dates unchanged. Every prior value, reason,
     administrator and time remain in history. Old references stay reserved to prevent duplicate
-    entry. Dates and patient links cannot be changed here.
+    entry. Date corrections move cash between UTC reporting periods; lifetime collections and
+    original marketing source stay unchanged. Refunds cannot precede their payment, and cash dates
+    cannot be in the future. Patient links cannot be changed here.
   </p>
   <p>
     Reverse the original payment's active match and clear its allocation plan, including refund
@@ -131,6 +135,47 @@
               <button type="submit" class="mp-button primary">Save reference correction</button>
             </form>
           </details>
+          <details open={form?.values?.receipt === receipt.id && !!form?.values?.occurred_at}>
+            <summary>Correct this date</summary>
+            <form method="POST" class="mp-form">
+              <input type="hidden" name="receipt" value={receipt.id} />
+              <input type="hidden" name="revision" value={receipt.revision} />
+              <input
+                type="hidden"
+                name="request_id"
+                value={form?.values?.receipt === receipt.id
+                  ? form.values.request_id
+                  : data.requestId}
+              />
+              <label
+                >Correct date and time (UTC)
+                <input
+                  name="occurred_at"
+                  type="datetime-local"
+                  step="1"
+                  required
+                  value={form?.values?.receipt === receipt.id && form.values.occurred_at
+                    ? form.values.occurred_at.replace(/Z$/, '')
+                    : new Date(receipt.occurred_at).toISOString().slice(0, 19)}
+                />
+              </label>
+              <label
+                >Reason for date correction
+                <textarea
+                  name="reason"
+                  maxlength="1000"
+                  required
+                  value={form?.values?.receipt === receipt.id && form.values.occurred_at
+                    ? form.values.reason
+                    : ''}></textarea>
+              </label>
+              <p>
+                This restates cash in the corrected reporting period. Amount and original marketing
+                attribution remain unchanged.
+              </p>
+              <button type="submit" class="mp-button primary">Save date correction</button>
+            </form>
+          </details>
         {/if}
       </article>
     {:else}<p>No cash records yet.</p>{/each}
@@ -144,7 +189,13 @@
     {#each info.history as entry (entry.id)}
       <article class="mp-form">
         <h3>{entry.reference} · Version {entry.revision}</h3>
-        {#if entry.field === 'reference'}
+        {#if entry.field === 'occurred_at'}
+          <p>
+            Date: {dateTime(entry.before_date)} → {dateTime(entry.after_date)} · Recorded {dateTime(
+              entry.occurred_at
+            )}
+          </p>
+        {:else if entry.field === 'reference'}
           <p>
             Reference: {entry.before_reference} → {entry.after_reference} · {dateTime(
               entry.occurred_at

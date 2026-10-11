@@ -3,7 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import { readPractice, writePractice } from '$lib/server/modern-practice.js';
 /** @type {import('./$types').PageServerLoad} */
 export async function load(event) {
-  const query = new URLSearchParams({ page: event.url.searchParams.get('page') || '1' });
+  const query = event.url.searchParams;
   const billing = await readPractice(event, `${event.params.id}/billing/?${query}`);
   return { billing, creditRequest: randomUUID(), reversalRequest: randomUUID() };
 }

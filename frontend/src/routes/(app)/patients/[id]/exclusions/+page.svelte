@@ -1,4 +1,5 @@
 <script>
+  import FinancialPages from '$lib/components/modern-practice/FinancialPages.svelte';
   import { resolve } from '$app/paths';
   import { asInternalPath } from '$lib/utils/paths.js';
   import { usd, dateTime } from '$lib/modern-practice.js';
@@ -16,6 +17,7 @@
       <p>{info.patient_name}</p>
     </div>
   </header>
+  <FinancialPages pages={info.pages} />
   {#if data.org.name.startsWith('TEST -')}<p class="mp-demo">
       Fictional test practice · demonstration records only
     </p>{/if}
@@ -39,10 +41,10 @@
     <div class="mp-panel-heading"><h2>Payment records</h2></div>
     <p class="mp-muted">
       Showing {info.receipts.length} of {info.receipt_count} payments, newest first. The retained-payment
-      chooser uses this same list. Reporting uses all included records.
+      chooser includes all eligible payments for this patient. Reporting uses all included records.
     </p>
     {#each info.receipts as receipt (receipt.id)}
-      {@const candidates = info.receipts.filter(
+      {@const candidates = info.retained_choices.filter(
         (other) =>
           other.id !== receipt.id &&
           !other.excluded &&

@@ -4,12 +4,14 @@ from decimal import Decimal
 
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.response import Response
 
 from patients.appointments import Conflict
 from patients.credits import CreditView, StrictInput
 from patients.models import PaymentMatch, Receipt, ReceiptAllocation, ReceiptCorrection
+from patients.pagination import window
 
 
 def correction_history(org, patient):
@@ -19,7 +21,13 @@ def correction_history(org, patient):
             "receipt": str(row.receipt_id),
             "reference": row.snapshot["reference"],
             "kind": row.snapshot["kind"],
-            "field": "reference" if row.reference is not None else "amount",
+            "field": "occurred_at"
+            if row.occurred_at is not None
+            else "reference"
+            if row.reference is not None
+            else "amount",
+            "before_date": row.snapshot["occurred_at"],
+            "after_date": row.occurred_at or row.snapshot["occurred_at"],
             "before_reference": row.snapshot["reference"],
             "after_reference": row.reference
             if row.reference is not None
@@ -63,18 +71,25 @@ class CorrectionInput(StrictInput):
         max_digits=12, decimal_places=2, min_value=Decimal("0.01"), required=False
     )
     reference = serializers.CharField(max_length=100, required=False)
+    occurred_at = serializers.DateTimeField(required=False)
     reason = serializers.CharField(max_length=1000)
 
     def validate(self, values):
-        if ("amount" in values) == ("reference" in values):
+        if (
+            sum(field in values for field in ("amount", "reference", "occurred_at"))
+            != 1
+        ):
             raise serializers.ValidationError(
-                "Correct exactly one field: amount or reference."
+                "Correct exactly one field: amount, reference or occurred_at."
             )
+        if values.get("occurred_at", timezone.now()) > timezone.now():
+            raise serializers.ValidationError("Cash dates cannot be in the future.")
         return values
 
 
 class PatientCorrections(CreditView):
     def get(self, request, pk):
+        pages = []
         patient = self.credit_patient(request, pk)
         org = request.profile.org
         history = correction_history(org, patient)
@@ -89,6 +104,7 @@ class PatientCorrections(CreditView):
         count = receipts.count()
         return Response(
             {
+                "pages": pages,
                 "patient_name": f"{patient.contact.first_name} {patient.contact.last_name}".strip(),
                 "receipt_count": count,
                 "history_count": len(history),
@@ -106,9 +122,17 @@ class PatientCorrections(CreditView):
                         if row.excluded
                         else blockers(org, row.payment_id or row.id),
                     }
-                    for row in receipts[:100]
+                    for row in window(
+                        request, "receipts", receipts, pages, "Cash records"
+                    )
                 ],
-                "history": list(reversed(history))[:100],
+                "history": window(
+                    request,
+                    "history",
+                    list(reversed(history)),
+                    pages,
+                    "Correction history",
+                ),
             }
         )
 
@@ -144,6 +168,7 @@ class PatientCorrections(CreditView):
                         or old.receipt_id != receipt.id
                         or old.revision != values["revision"] + 1
                         or old.reference != values.get("reference")
+                        or old.occurred_at != values.get("occurred_at")
                         or ("amount" in values and old.amount != values["amount"])
                         or old.reason != values["reason"]
                     ):
@@ -163,7 +188,11 @@ class PatientCorrections(CreditView):
                     raise Conflict(
                         "This receipt changed. Reload and review the latest record."
                     )
-                field = "reference" if "reference" in values else "amount"
+                field = next(
+                    key
+                    for key in ("amount", "reference", "occurred_at")
+                    if key in values
+                )
                 if getattr(receipt, field) == values[field]:
                     raise Conflict(
                         "The corrected value must differ from the current value."
@@ -176,11 +205,12 @@ class PatientCorrections(CreditView):
                     request_id=values["request_id"],
                     amount=values.get("amount", receipt.amount),
                     reference=values.get("reference"),
+                    occurred_at=values.get("occurred_at"),
                     reason=values["reason"],
                     created_by=request.user,
                 )
         except IntegrityError as error:
             raise Conflict(
-                "Correction rejected. Reload and check reserved references, refund limits, matches and allocations."
+                "Correction rejected. Reload and check reserved references, refund dates/limits, matches and allocations."
             ) from error
         return Response({"id": str(entry.id), "already_recorded": False}, status=201)

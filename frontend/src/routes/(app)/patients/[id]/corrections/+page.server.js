@@ -5,7 +5,10 @@ import { readPractice } from '$lib/server/modern-practice.js';
 
 export async function load(event) {
   return {
-    corrections: await readPractice(event, `${event.params.id}/corrections/`),
+    corrections: await readPractice(
+      event,
+      `${event.params.id}/corrections/?${event.url.searchParams}`
+    ),
     patientId: event.params.id,
     requestId: randomUUID(),
     saved: event.url.searchParams.get('saved') === '1'
@@ -20,10 +23,12 @@ export const actions = {
         'receipt',
         'revision',
         'request_id',
-        form.has('reference') ? 'reference' : 'amount',
+        form.has('occurred_at') ? 'occurred_at' : form.has('reference') ? 'reference' : 'amount',
         'reason'
       ].map((key) => [key, String(form.get(key) || '')])
     );
+    if (values.occurred_at && !/[zZ]|[+-]\d{2}:\d{2}$/.test(values.occurred_at))
+      values.occurred_at += 'Z';
     try {
       await apiRequest(
         `/patients/${event.params.id}/corrections/`,

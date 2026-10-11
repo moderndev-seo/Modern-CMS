@@ -43,7 +43,7 @@ export const actions = {
     const result = await writePractice(
       event,
       `${event.params.id}/appointments/${id}/`,
-      ['action', 'revision', 'reason', 'starts_at', 'ends_at'],
+      ['action', 'revision', 'reason', 'starts_at', 'ends_at', 'outcome'],
       'PATCH'
     );
     if ('success' in result)

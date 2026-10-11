@@ -9,6 +9,7 @@ from patients.appointments import Conflict
 from patients.corrections import blockers
 from patients.credits import CreditView, StrictInput
 from patients.models import Receipt, ReceiptExclusion
+from patients.pagination import window
 
 
 def exclusion_history(org, patient):
@@ -49,6 +50,7 @@ class ExclusionInput(StrictInput):
 
 class PatientExclusions(CreditView):
     def get(self, request, pk):
+        pages = []
         patient = self.credit_patient(request, pk)
         org = request.profile.org
         history = exclusion_history(org, patient)
@@ -61,7 +63,7 @@ class PatientExclusions(CreditView):
             org=org, patient=patient, kind="payment"
         ).order_by("-occurred_at", "id")
         rows = []
-        for cash in receipts[:100]:
+        for cash in window(request, "receipts", receipts, pages, "Payment records"):
             reasons = blockers(org, cash.id) if not cash.excluded else []
             if (
                 not cash.excluded
@@ -83,10 +85,22 @@ class PatientExclusions(CreditView):
             )
         return Response(
             {
+                "pages": pages,
                 "patient_name": f"{patient.contact.first_name} {patient.contact.last_name}".strip(),
                 "receipts": rows,
+                "retained_choices": list(
+                    receipts.filter(excluded=False).values(
+                        "id", "reference", "amount", "occurred_at"
+                    )
+                ),
                 "receipt_count": receipts.count(),
-                "history": list(reversed(history))[:100],
+                "history": window(
+                    request,
+                    "history",
+                    list(reversed(history)),
+                    pages,
+                    "Decision history",
+                ),
                 "history_count": len(history),
             }
         )

@@ -43,7 +43,17 @@ class AppointmentSerializer(StrictSerializer):
 
 class ChangeSerializer(serializers.Serializer):
     action = serializers.ChoiceField(
-        choices=["rescheduled", "cancelled", "attended", "no_show", "reopened"]
+        choices=[
+            "rescheduled",
+            "cancelled",
+            "attended",
+            "no_show",
+            "reopened",
+            "outcome_corrected",
+        ]
+    )
+    outcome = serializers.ChoiceField(
+        choices=["attended", "no_show", "cancelled"], required=False
     )
     revision = serializers.IntegerField(min_value=1)
     reason = serializers.CharField(max_length=1000)
@@ -60,6 +70,11 @@ class ChangeSerializer(serializers.Serializer):
         return super().to_internal_value(data)
 
     def validate(self, attrs):
+        if attrs["action"] == "outcome_corrected":
+            if "outcome" not in attrs:
+                raise ValidationError("Choose the corrected appointment outcome.")
+        elif "outcome" in attrs:
+            raise ValidationError("Outcome is only allowed for an outcome correction.")
         if attrs["action"] in ("rescheduled", "reopened"):
             if "starts_at" not in attrs or "ends_at" not in attrs:
                 raise ValidationError(
@@ -85,12 +100,14 @@ def snapshot(appointment):
 
 def audit(request, appointment, action, reason, before):
     event = None
-    if action in ("booked", "attended"):
+    if action in ("booked", "attended") or (
+        action == "outcome_corrected" and appointment.status == "attended"
+    ):
         event = JourneyEvent.objects.create(
             org=request.profile.org,
             patient=appointment.patient,
             created_by=request.user,
-            kind=action,
+            kind="attended" if action == "outcome_corrected" else action,
             occurred_at=timezone.now(),
             notes=f"Appointment {appointment.id}: {appointment.title}",
         )
@@ -208,6 +225,9 @@ class AppointmentDetail(PracticeView):
             "cancelled",
             "no_show",
         )
+        data["can_correct_outcome"] = (
+            is_org_admin(request.profile) and appointment.status != "scheduled"
+        )
         data["history"] = [
             {
                 "id": str(change.id),
@@ -243,7 +263,19 @@ class AppointmentDetail(PracticeView):
             if appointment.revision != values["revision"]:
                 raise Conflict()
             action = values["action"]
-            if action == "reopened":
+            if action == "outcome_corrected":
+                if not is_org_admin(request.profile):
+                    raise PermissionDenied(
+                        "Only practice administrators may correct appointment outcomes."
+                    )
+                if (
+                    appointment.status == "scheduled"
+                    or appointment.status == values["outcome"]
+                ):
+                    raise Conflict(
+                        "Choose a different outcome for a closed appointment."
+                    )
+            elif action == "reopened":
                 if not is_org_admin(request.profile):
                     raise PermissionDenied(
                         "Only practice administrators may reopen appointments."
@@ -279,21 +311,64 @@ class AppointmentDetail(PracticeView):
                 )
             else:
                 now = timezone.now()
-                if action == "attended" and appointment.starts_at > now:
+                outcome = values["outcome"] if action == "outcome_corrected" else action
+                if outcome == "attended" and appointment.starts_at > now:
                     raise ValidationError(
                         {
                             "detail": "Attendance cannot be recorded before the scheduled start."
                         }
                     )
-                if action == "no_show" and appointment.ends_at > now:
+                if outcome == "no_show" and appointment.ends_at > now:
                     raise ValidationError(
                         {
                             "detail": "No-show cannot be recorded before the scheduled end."
                         }
                     )
-                appointment.status = action
+                appointment.status = outcome
             appointment.revision += 1
             appointment.updated_by = request.user
             appointment.save()
             audit(request, appointment, action, values["reason"], before)
         return Response(AppointmentSerializer(appointment).data)
+
+
+def attendance_projection(org, patient, serialized_events):
+    """Keep original events visible; only the latest valid attendance marks progress."""
+    changes = list(
+        AppointmentChange.objects.filter(org=org, appointment__patient=patient)
+        .select_related("appointment", "journey_event", "created_by")
+        .order_by("after__revision", "created_at", "id")
+    )
+    latest_attendance = {}
+    for change in changes:
+        if change.journey_event_id and change.journey_event.kind == "attended":
+            latest_attendance[change.appointment_id] = change.journey_event_id
+    superseded = {
+        str(change.journey_event_id)
+        for change in changes
+        if change.journey_event_id
+        and change.journey_event.kind == "attended"
+        and (
+            change.appointment.status != "attended"
+            or latest_attendance[change.appointment_id] != change.journey_event_id
+        )
+    }
+    events = [
+        {**event, "superseded": str(event["id"]) in superseded}
+        for event in serialized_events
+    ]
+    corrections = [
+        {
+            "id": str(change.id),
+            "appointment": str(change.appointment_id),
+            "title": change.appointment.title,
+            "reason": change.reason,
+            "before": change.before["status"],
+            "after": change.after["status"],
+            "occurred_at": change.created_at,
+            "actor": change.created_by.email if change.created_by else "Not recorded",
+        }
+        for change in changes
+        if change.action == "outcome_corrected"
+    ]
+    return events, corrections

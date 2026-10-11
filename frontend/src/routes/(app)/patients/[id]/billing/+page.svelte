@@ -1,4 +1,5 @@
 <script>
+  import FinancialPages from '$lib/components/modern-practice/FinancialPages.svelte';
   import { resolve } from '$app/paths';
   import { dateTime } from '$lib/modern-practice.js';
   import { asInternalPath } from '$lib/utils/paths.js';
@@ -32,6 +33,10 @@
       <p>{billing.patient_name}</p>
     </div>
   </header>
+  <a class="mp-button" href={resolve(asInternalPath(`/patients/${billing.patient_id}/statement`))}
+    >Internal statement and CSV</a
+  >
+  <FinancialPages pages={billing.pages} />
   {#if data.org.name.startsWith('TEST -')}<p class="mp-demo">
       Fictional test practice · demonstration records only
     </p>{/if}
@@ -111,10 +116,10 @@
         amounts alone do not prove a match.
       </p>
       <p class="mp-muted">
-        Showing up to the 100 most recent eligible entries from each ledger. Unmatched receipts: {billing
-          .matching.receipt_count}; unmatched invoice payments: {billing.matching.payment_count}.
-        Match history is permanent. Reverse a mistaken match below before matching its records
-        again.
+        Showing up to 100 entries per ledger page. Use the page controls above to reach older
+        records. Unmatched receipts: {billing.matching.receipt_count}; unmatched invoice payments: {billing
+          .matching.payment_count}. Match history is permanent. Reverse a mistaken match below
+        before matching its records again.
       </p>
       {#if billing.matching.receipts.length && billing.matching.invoice_payments.length}
         <label
@@ -164,7 +169,7 @@
     </div>
     <div class="mp-form">
       <p class="mp-muted">
-        Most recent 100 matches · UTC · Refunds remain separate and are not reconciled here.
+        Up to 100 matches per page · UTC · Refunds remain separate and are not reconciled here.
       </p>
       {#each billing.matching.matches as match (match.id)}<article class="mp-followup">
           <strong>{match.receipt} · USD {amount(match.amount)}</strong>
@@ -352,7 +357,7 @@
     </div>
     <div class="mp-form">
       <p class="mp-muted">
-        Most recent 100 entries · UTC · Original entries and reversals are permanent. These are
+        Up to 100 entries per page · UTC · Original entries and reversals are permanent. These are
         internal charge adjustments, not cash refunds or issued credit-note documents.
       </p>
       {#each billing.credit_history.entries as credit (credit.id)}
