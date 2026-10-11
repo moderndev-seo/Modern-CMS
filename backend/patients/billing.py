@@ -57,7 +57,7 @@ class PatientBilling(PracticeView):
             )
         receipts = {
             row["kind"]: row["total"]
-            for row in Receipt.objects.filter(org=org, patient=patient)
+            for row in Receipt.objects.filter(org=org, patient=patient, excluded=False)
             .values("kind")
             .annotate(total=Sum("amount"))
         }
@@ -93,7 +93,9 @@ class PatientBilling(PracticeView):
         }
         coverage = receipt_coverage(patient, matches)
         receipt_choices = (
-            Receipt.objects.filter(org=org, patient=patient, kind="payment")
+            Receipt.objects.filter(
+                org=org, patient=patient, kind="payment", excluded=False
+            )
             .exclude(pk__in=matches.filter(active=True).values("receipt_id"))
             .order_by("-occurred_at", "id")
         )

@@ -159,6 +159,7 @@ class ReceiptSerializer(StrictSerializer):
         model = Receipt
         fields = [
             "id",
+            "excluded",
             "kind",
             "amount",
             "occurred_at",
@@ -166,7 +167,7 @@ class ReceiptSerializer(StrictSerializer):
             "reference",
             "notes",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id", "excluded"]
         validators = []
 
     def validate(self, attrs):

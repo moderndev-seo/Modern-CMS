@@ -192,6 +192,10 @@ class Command(BaseCommand):
                         f"/patients/{demo_id(key + ':alex')}/corrections",
                         "Correction history",
                     ),
+                    (
+                        f"/patients/{demo_id(key + ':alex')}/exclusions",
+                        "Decision history",
+                    ),
                     ("/practice-modules/reviews", "Not implemented"),
                 ):
                     page = front.get(
@@ -202,7 +206,7 @@ class Command(BaseCommand):
                             f"Frontend page {path} failed: HTTP {page.status_code}"
                         )
                 self.stdout.write(
-                    "Ten authenticated frontend routes rendered successfully over HTTP."
+                    "Eleven authenticated frontend routes rendered successfully over HTTP."
                 )
         reversal_checks = 0
         for key, session in sessions.items():
@@ -485,6 +489,51 @@ class Command(BaseCommand):
             correction_checks += len(rejected)
         self.stdout.write(
             f"{correction_checks} cash correction HTTP isolation checks passed."
+        )
+        exclusion_checks = 0
+        for key, session in sessions.items():
+            other = "cedar" if key == "harbor" else "harbor"
+            own_url = f"{root}{demo_id(key + ':alex')}/exclusions/"
+            foreign_url = f"{root}{demo_id(other + ':alex')}/exclusions/"
+            before = session.get(own_url, timeout=90)
+            before.raise_for_status()
+            foreign = sessions[other].get(foreign_url, timeout=90)
+            foreign.raise_for_status()
+            own_cash = before.json()["receipts"][0]["id"]
+            foreign_cash = foreign.json()["receipts"][0]["id"]
+            rejected = [
+                session.get(foreign_url, timeout=90),
+                session.post(foreign_url, json={}, timeout=90),
+            ]
+            for receipt, retained in (
+                (foreign_cash, own_cash),
+                (own_cash, foreign_cash),
+            ):
+                rejected.append(
+                    session.post(
+                        own_url,
+                        json={
+                            "receipt": receipt,
+                            "retained": retained,
+                            "excluded": True,
+                            "revision": 0,
+                            "request_id": str(uuid4()),
+                            "reason": "TEST foreign duplicate link rejection",
+                        },
+                        timeout=90,
+                    )
+                )
+            if any(response.status_code != 404 for response in rejected):
+                raise CommandError("Exclusion cross-practice rejection failed.")
+            after = session.get(own_url, timeout=90)
+            after.raise_for_status()
+            if before.json() != after.json():
+                raise CommandError(
+                    "Rejected exclusion changed stored decisions or cash."
+                )
+            exclusion_checks += len(rejected)
+        self.stdout.write(
+            f"{exclusion_checks} duplicate exclusion HTTP isolation checks passed."
         )
         appointment_checks = 0
         for key, session in sessions.items():

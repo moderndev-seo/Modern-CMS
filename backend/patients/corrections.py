@@ -87,7 +87,11 @@ class PatientCorrections(CreditView):
                         "amount": row.amount,
                         "occurred_at": row.occurred_at,
                         "revision": revisions.get(str(row.id), 0),
-                        "blockers": blockers(org, row.payment_id or row.id),
+                        "blockers": [
+                            "Restore this excluded payment before correcting its amount."
+                        ]
+                        if row.excluded
+                        else blockers(org, row.payment_id or row.id),
                     }
                     for row in receipts[:100]
                 ],

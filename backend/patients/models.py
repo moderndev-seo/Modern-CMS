@@ -56,6 +56,7 @@ class JourneyEvent(BaseOrgModel):
 
 
 class Receipt(BaseOrgModel):
+    excluded = models.BooleanField(default=False, editable=False)
     patient = models.ForeignKey(
         Patient, on_delete=models.PROTECT, related_name="receipts"
     )
@@ -290,5 +291,49 @@ class ReceiptCorrection(BaseOrgModel):
             models.CheckConstraint(
                 condition=models.Q(revision__gt=0),
                 name="mp_cash_correction_revision_positive",
+            ),
+        ]
+
+
+class ReceiptExclusion(BaseOrgModel):
+    """Append-only decisions to exclude or restore a duplicate payment."""
+
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT)
+    receipt = models.ForeignKey(
+        Receipt, on_delete=models.PROTECT, related_name="exclusions"
+    )
+    retained = models.ForeignKey(
+        Receipt,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="duplicate_decisions",
+    )
+    excluded = models.BooleanField()
+    revision = models.PositiveIntegerField()
+    request_id = models.UUIDField()
+    reason = models.CharField(max_length=1000)
+    snapshot = models.JSONField(default=dict)
+
+    class Meta:
+        db_table = "mp_receipt_exclusion"
+        ordering = ["created_at", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_exclusion_request"
+            ),
+            models.UniqueConstraint(
+                fields=["receipt", "revision"], name="mp_exclusion_revision"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(revision__gt=0),
+                name="mp_exclusion_revision_positive",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(excluded=True, retained__isnull=False)
+                    | models.Q(excluded=False, retained__isnull=True)
+                ),
+                name="mp_exclusion_retained",
             ),
         ]

@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { refundablePayments } from './modern-practice.js';
 
 describe('refundable balances', () => {
+  it('never offers an excluded duplicate for refund entry', () => {
+    expect(
+      refundablePayments([
+        { id: 'a', kind: 'payment', amount: '100.00', reference: 'A', excluded: true },
+        { id: 'b', kind: 'payment', amount: '100.00', reference: 'B', excluded: false }
+      ]).map((entry) => entry.id)
+    ).toEqual(['b']);
+  });
   it('subtracts only refunds linked to the correct payment, in cents', () => {
     const records = [
       { id: 'a', kind: 'payment', amount: '0.30', reference: 'A' },

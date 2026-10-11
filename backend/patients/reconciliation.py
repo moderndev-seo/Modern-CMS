@@ -42,7 +42,7 @@ def receipt_coverage(patient, matches):
     }
     by_invoice = {}
     for receipt in Receipt.objects.filter(
-        org_id=patient.org_id, patient=patient, kind="payment"
+        org_id=patient.org_id, patient=patient, kind="payment", excluded=False
     ):
         invoice_id = valid.get(receipt.id)
         group = (

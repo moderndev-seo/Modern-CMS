@@ -22,6 +22,9 @@
   <a href={resolve(asInternalPath(`/patients/${billing.patient_id}/corrections`))}
     >Correct recorded cash amounts →</a
   >
+  <a href={resolve(asInternalPath(`/patients/${billing.patient_id}/exclusions`))}
+    >Review duplicate payments →</a
+  >
   <header class="mp-header">
     <div>
       <p class="mp-eyebrow">Patient finances · All recorded dates</p>
@@ -74,8 +77,8 @@
     <div class="mp-panel-heading"><h2>Receipt-to-invoice coverage · USD</h2></div>
     <div class="mp-form">
       <p>
-        All recorded dates and all receipts, including records beyond the lists below. Refunds
-        follow their original receipt through its active, unchanged payment match.
+        All recorded dates and all included receipts, including records beyond the lists below.
+        Refunds follow their original receipt through its active, unchanged payment match.
       </p>
       {#each [{ key: 'linked', label: 'Linked through valid matches' }, { key: 'unmatched', label: 'No active match' }, { key: 'needs_review', label: 'Changed match — needs review' }] as group (group.key)}
         <article class="mp-followup">

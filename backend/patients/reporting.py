@@ -49,7 +49,11 @@ def growth_report(org, start, end):
             rows[row["patient__original_source"]][key] = row["count"]
     for row in (
         Receipt.objects.filter(
-            org=org, patient__org=org, occurred_at__gte=lower, occurred_at__lt=upper
+            excluded=False,
+            org=org,
+            patient__org=org,
+            occurred_at__gte=lower,
+            occurred_at__lt=upper,
         )
         .values("patient__original_source", "kind")
         .annotate(total=Sum("amount"))

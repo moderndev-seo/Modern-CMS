@@ -159,8 +159,16 @@ class PatientDetail(PracticeView):
         from patients.corrections import correction_history
 
         data["corrections"] = correction_history(request.profile.org, patient)
+        from patients.exclusions import exclusion_history
+
+        data["exclusions"] = exclusion_history(request.profile.org, patient)
         data["net_revenue"] = sum(
-            (r.amount if r.kind == "payment" else -r.amount for r in receipts), 0
+            (
+                r.amount if r.kind == "payment" else -r.amount
+                for r in receipts
+                if not r.excluded
+            ),
+            0,
         )
         return Response(data)
 
@@ -215,6 +223,7 @@ class ReceiptList(PracticeView):
                         org=request.profile.org,
                         patient=patient,
                         kind="payment",
+                        excluded=False,
                     )
                     if data.get("occurred_at", timezone.now()) < payment.occurred_at:
                         raise ValidationError(

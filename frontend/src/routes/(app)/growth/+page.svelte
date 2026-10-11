@@ -110,9 +110,9 @@
           <p>
             <strong>Cash basis.</strong> Payments and refunds use their own received/refunded timestamps,
             from 00:00 UTC on the start date to 00:00 UTC the day after the end date. A refund in this
-            period reduces this period, even if the payment was earlier. Audited amount corrections restate
-            the receipt’s original period, so past totals can change; they are not new cash on the correction
-            date.
+            period reduces this period, even if the payment was earlier. Duplicate-payment exclusions
+            and restorations, and audited amount corrections, restate the receipt’s original period, so
+            past totals can change; they are not new cash on the correction date.
           </p>
           <p>
             <strong>First-touch attribution.</strong> All net receipts go to the patient's immutable original

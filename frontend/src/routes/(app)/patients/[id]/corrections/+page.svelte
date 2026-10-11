@@ -33,7 +33,8 @@
     Reverse the original payment's active match and clear its allocation plan, including refund
     explanations, before correcting a payment or any of its refunds. Reconcile again after saving.
     To undo a correction, enter the previous amount as a new correction with a reason. Amounts must
-    remain positive and within refund limits; removing duplicate payments is not supported yet.
+    remain positive and within refund limits; use Billing review → Review duplicate payments to
+    exclude an eligible duplicate without deleting it.
   </p>
   {#if form?.error}<p class="mp-error" role="alert">{form.error}</p>{/if}
   {#if data.saved}<p class="mp-success" role="status">

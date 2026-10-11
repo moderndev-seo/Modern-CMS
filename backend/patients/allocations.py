@@ -113,7 +113,9 @@ class PatientAllocations(CreditView):
         patient = self.credit_patient(request, pk)
         org = request.profile.org
         receipts = list(
-            Receipt.objects.filter(org=org, patient=patient, kind="payment")
+            Receipt.objects.filter(
+                org=org, patient=patient, kind="payment", excluded=False
+            )
             .select_related("patient")
             .order_by("-occurred_at", "id")
         )

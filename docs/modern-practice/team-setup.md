@@ -102,3 +102,14 @@ As an administrator, select a TEST practice, open Patients → Alex Rivera → B
 For a deliberate fictional rehearsal, expand a record's correction form, enter a different positive amount and a reason, and save. Observe changed collections and Growth in the receipt's original date range. To restore the amount, save its previous value with a new reason. Both entries remain permanently visible in correction history and the patient timeline. These steps modify your local TEST records and are not automatically performed by setup or seeding. Reconcile matches/allocations again afterward. No money moves and legacy invoice/payment records remain unchanged.
 
 Refund totals cannot exceed the original payment, and reducing a payment below its refunds is rejected. Request IDs protect retries; stale versions require reloading. Correction/history controls show the latest 100 cash records and 100 audit entries with counts; reporting includes all records. Deleting duplicates, setting zero amounts, and changing original dates, references or patient links are not supported. Corrections restate past cash reporting rather than creating cash on the correction date.
+
+
+## Duplicate-payment review
+
+After pulling, run `docker compose up --build -d` to apply `patients.0011_receipt_exclusions`. Existing receipts default to included and existing financial amounts remain unchanged. The permanent audit migration is irreversible.
+
+As a practice administrator, open Patients → a patient → Billing review → Review duplicate payments. Confirm from your source records that two entries describe the same actual payment. Select the duplicate, choose the equal-amount record to retain, and enter the evidence/reason. The duplicate must have no refunds; reverse its active match and clear its allocation plan first. A payment retained by another active exclusion cannot itself be excluded. Exclusion updates original-period collections and Growth, preserves both records, and does not refund money or change invoices. Restoring a payment adds another audit entry and includes it again; reconciliation requires review afterward.
+
+Do not create fake duplicates in an existing practice merely to test this screen. Automated exclusion/restoration tests use the separate test database. The two base TEST demos have no seeded duplicates, so their review screens show why no exclusion is available. New teams may rehearse with their own disposable fictional local records. Decisions persist in their local database and are not erased on restoration or seed reruns.
+
+Limits: same-patient equal-amount payment duplicates without refunds only; no automatic detection, duplicate-refund handling or invoice-ledger cleanup. Choosers/history show the latest 100 entries with counts; reporting uses all included records. Excluded records remain visible in the patient timeline and decision history.

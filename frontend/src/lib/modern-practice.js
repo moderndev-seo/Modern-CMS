@@ -33,11 +33,11 @@ export const dateTime = (value) =>
 export const nowInput = () => new Date().toISOString().slice(0, 16);
 
 /** Remaining balances use integer cents to avoid fractional-cent subtraction.
- * @param {{id: string, kind: string, amount: string, payment?: string | null, reference: string}[]} receipts
+ * @param {{id: string, kind: string, amount: string, payment?: string | null, excluded?: boolean, reference: string}[]} receipts
  */
 export function refundablePayments(receipts) {
   return receipts
-    .filter((entry) => entry.kind === 'payment')
+    .filter((entry) => entry.kind === 'payment' && !entry.excluded)
     .map((payment) => {
       const refunded = receipts
         .filter((entry) => entry.kind === 'refund' && entry.payment === payment.id)

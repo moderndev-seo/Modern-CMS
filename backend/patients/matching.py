@@ -45,6 +45,7 @@ def matches_current_records(match):
     r, p = match.receipt, match.invoice_payment
     return (
         r.kind == "payment"
+        and not r.excluded
         and r.amount == p.amount == Decimal(match.snapshot["amount"])
         and r.org_id == p.org_id == p.invoice.org_id == match.org_id
         and r.patient.contact_id == p.invoice.contact_id
@@ -88,6 +89,7 @@ class MatchPayments(PracticeView):
                     )
                 if (
                     receipt.kind != "payment"
+                    or receipt.excluded
                     or receipt.amount != payment.amount
                     or payment.invoice.currency != "USD"
                 ):
