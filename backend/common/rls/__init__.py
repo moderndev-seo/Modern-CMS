@@ -42,6 +42,7 @@ ORG_SCOPED_TABLES = [
     "mp_receipt_allocation",
     "mp_receipt_correction",
     "mp_receipt_exclusion",
+    "mp_cash_reference_reservation",
     "mp_payment_match_reversal",
     "mp_marketing_spend",
     # Core business entities

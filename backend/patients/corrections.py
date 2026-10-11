@@ -1,4 +1,4 @@
-"""Audited corrections to recorded cash amounts, never actual money movements."""
+"""Audited corrections to recorded cash amounts and references, never actual money movements."""
 
 from decimal import Decimal
 
@@ -19,6 +19,11 @@ def correction_history(org, patient):
             "receipt": str(row.receipt_id),
             "reference": row.snapshot["reference"],
             "kind": row.snapshot["kind"],
+            "field": "reference" if row.reference is not None else "amount",
+            "before_reference": row.snapshot["reference"],
+            "after_reference": row.reference
+            if row.reference is not None
+            else row.snapshot["reference"],
             "before": row.snapshot["amount"],
             "after": row.amount,
             "revision": row.revision,
@@ -55,9 +60,17 @@ class CorrectionInput(StrictInput):
     revision = serializers.IntegerField(min_value=0)
     request_id = serializers.UUIDField()
     amount = serializers.DecimalField(
-        max_digits=12, decimal_places=2, min_value=Decimal("0.01")
+        max_digits=12, decimal_places=2, min_value=Decimal("0.01"), required=False
     )
+    reference = serializers.CharField(max_length=100, required=False)
     reason = serializers.CharField(max_length=1000)
+
+    def validate(self, values):
+        if ("amount" in values) == ("reference" in values):
+            raise serializers.ValidationError(
+                "Correct exactly one field: amount or reference."
+            )
+        return values
 
 
 class PatientCorrections(CreditView):
@@ -88,7 +101,7 @@ class PatientCorrections(CreditView):
                         "occurred_at": row.occurred_at,
                         "revision": revisions.get(str(row.id), 0),
                         "blockers": [
-                            "Restore this excluded payment before correcting its amount."
+                            "Restore this excluded payment before correcting it."
                         ]
                         if row.excluded
                         else blockers(org, row.payment_id or row.id),
@@ -130,7 +143,8 @@ class PatientCorrections(CreditView):
                         old.patient_id != patient.id
                         or old.receipt_id != receipt.id
                         or old.revision != values["revision"] + 1
-                        or old.amount != values["amount"]
+                        or old.reference != values.get("reference")
+                        or ("amount" in values and old.amount != values["amount"])
                         or old.reason != values["reason"]
                     ):
                         raise Conflict(
@@ -147,11 +161,12 @@ class PatientCorrections(CreditView):
                 )
                 if values["revision"] != (previous.revision if previous else 0):
                     raise Conflict(
-                        "This receipt changed. Reload and review the latest amount."
+                        "This receipt changed. Reload and review the latest record."
                     )
-                if receipt.amount == values["amount"]:
+                field = "reference" if "reference" in values else "amount"
+                if getattr(receipt, field) == values[field]:
                     raise Conflict(
-                        "The corrected amount must differ from the current amount."
+                        "The corrected value must differ from the current value."
                     )
                 entry = ReceiptCorrection.objects.create(
                     org=org,
@@ -159,12 +174,13 @@ class PatientCorrections(CreditView):
                     receipt=receipt,
                     revision=values["revision"] + 1,
                     request_id=values["request_id"],
-                    amount=values["amount"],
+                    amount=values.get("amount", receipt.amount),
+                    reference=values.get("reference"),
                     reason=values["reason"],
                     created_by=request.user,
                 )
         except IntegrityError as error:
             raise Conflict(
-                "Correction rejected. Reload and check refund limits, matches and allocations."
+                "Correction rejected. Reload and check reserved references, refund limits, matches and allocations."
             ) from error
         return Response({"id": str(entry.id), "already_recorded": False}, status=201)

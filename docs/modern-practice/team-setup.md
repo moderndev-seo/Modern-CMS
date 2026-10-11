@@ -113,3 +113,12 @@ As a practice administrator, open Patients → a patient → Billing review → 
 Do not create fake duplicates in an existing practice merely to test this screen. Automated exclusion/restoration tests use the separate test database. The two base TEST demos have no seeded duplicates, so their review screens show why no exclusion is available. New teams may rehearse with their own disposable fictional local records. Decisions persist in their local database and are not erased on restoration or seed reruns.
 
 Limits: same-patient equal-amount payment duplicates without refunds only; no automatic detection, duplicate-refund handling or invoice-ledger cleanup. Choosers/history show the latest 100 entries with counts; reporting uses all included records. Excluded records remain visible in the patient timeline and decision history.
+
+
+## Correcting a recorded reference
+
+Pull the latest code and run `docker compose up --build -d` to apply `patients.0012_receipt_reference_corrections`. Existing cash values and references remain untouched by migration. Permanent reservations and correction history cannot be removed by rollback.
+
+As a practice administrator, open Patients → patient → Billing review → Correct recorded cash details → Correct this reference. Enter the corrected reference and a reason. Reverse the original payment's active match and clear its allocation plan first; restore an excluded payment before correcting it. Payments and refunds are supported. Amount and reference corrections are separate operations, sharing the same correction version. Reference changes do not affect cash totals, dates or source reporting. Review reconciliation afterward.
+
+Each reference ever used by a receipt remains reserved for that receipt within its practice. Restoring a previous reference is allowed; reusing it on another receipt is rejected. Old request retries cannot reapply earlier values. Past audit snapshots retain their historical references. Seeds use stable IDs, so rerunning them does not reset corrected references. Test successful writes in the isolated PostgreSQL database or your own disposable fictional records; this increment does not add live demo audit entries.

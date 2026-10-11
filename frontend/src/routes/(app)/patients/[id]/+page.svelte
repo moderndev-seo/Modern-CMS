@@ -52,8 +52,14 @@
       })),
       ...(patient.corrections || []).map((/** @type {any} */ entry) => ({
         ...entry,
-        title: 'Recorded amount corrected · no money moved',
-        description: `${entry.reference}: ${usd(entry.before)} → ${usd(entry.after)} · ${entry.reason}`,
+        title:
+          entry.field === 'reference'
+            ? 'Recorded reference corrected · no money moved'
+            : 'Recorded amount corrected · no money moved',
+        description:
+          entry.field === 'reference'
+            ? `${entry.before_reference} → ${entry.after_reference} · ${entry.reason}`
+            : `${entry.reference}: ${usd(entry.before)} → ${usd(entry.after)} · ${entry.reason}`,
         amount: null
       })),
       ...(patient.exclusions || []).map((/** @type {any} */ entry) => ({
@@ -71,7 +77,7 @@
           : receipt.kind === 'payment'
             ? 'Payment received'
             : 'Refund issued',
-        description: `${receipt.reference}${(patient.corrections || []).some((/** @type {any} */ entry) => entry.receipt === receipt.id) ? ' · Current corrected amount; see correction history' : ''}${receipt.notes ? ' · ' + receipt.notes : ''}`,
+        description: `${receipt.reference}${(patient.corrections || []).some((/** @type {any} */ entry) => entry.receipt === receipt.id && entry.field !== 'reference') ? ' · Current corrected amount; see correction history' : ''}${receipt.notes ? ' · ' + receipt.notes : ''}`,
         amount: (receipt.kind === 'refund' ? '-' : '') + usd(receipt.amount)
       }))
     ].sort((a, b) => new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime())

@@ -20,7 +20,7 @@
     >Review recorded balances →</a
   >
   <a href={resolve(asInternalPath(`/patients/${billing.patient_id}/corrections`))}
-    >Correct recorded cash amounts →</a
+    >Correct recorded cash details →</a
   >
   <a href={resolve(asInternalPath(`/patients/${billing.patient_id}/exclusions`))}
     >Review duplicate payments →</a

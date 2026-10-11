@@ -480,6 +480,19 @@ class Command(BaseCommand):
                         timeout=90,
                     )
                 )
+                rejected.append(
+                    session.post(
+                        own_url,
+                        json={
+                            "receipt": receipt["id"],
+                            "revision": receipt["revision"],
+                            "request_id": str(uuid4()),
+                            "reference": "TEST-REJECTED-FOREIGN-REFERENCE",
+                            "reason": "TEST foreign reference correction rejection",
+                        },
+                        timeout=90,
+                    )
+                )
             if any(response.status_code != 404 for response in rejected):
                 raise CommandError("Correction cross-practice rejection failed.")
             after = session.get(own_url, timeout=90)

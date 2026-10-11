@@ -15,7 +15,7 @@
   <header class="mp-header">
     <div>
       <p class="mp-eyebrow">Patient finances · USD</p>
-      <h1>Correct recorded cash amounts</h1>
+      <h1>Correct recorded cash details</h1>
       <p>{info.patient_name}</p>
     </div>
   </header>
@@ -23,16 +23,16 @@
       Fictional test practice · demonstration records only
     </p>{/if}
   <p class="mp-notice">
-    Use this only to correct an incorrectly entered amount. No money is collected or refunded.
-    Growth and net collections are recalculated for the receipt's original date and original
-    marketing source, including past reporting periods. The original amount, reason, administrator
-    and time remain in correction history. Dates, references and patient links cannot be changed
-    here.
+    Correct an incorrectly entered amount or reference, one field at a time. No money is collected
+    or refunded. Amount changes recalculate the original reporting period and source. Reference
+    changes leave collections and reporting dates unchanged. Every prior value, reason,
+    administrator and time remain in history. Old references stay reserved to prevent duplicate
+    entry. Dates and patient links cannot be changed here.
   </p>
   <p>
     Reverse the original payment's active match and clear its allocation plan, including refund
     explanations, before correcting a payment or any of its refunds. Reconcile again after saving.
-    To undo a correction, enter the previous amount as a new correction with a reason. Amounts must
+    To undo a correction, enter the previous value as a new correction with a reason. Amounts must
     remain positive and within refund limits; use Billing review → Review duplicate payments to
     exclude an eligible duplicate without deleting it.
   </p>
@@ -91,6 +91,46 @@
               <button type="submit" class="mp-button primary">Save amount correction</button>
             </form>
           </details>
+          <details open={form?.values?.receipt === receipt.id && !!form?.values?.reference}>
+            <summary>Correct this reference</summary>
+            <form method="POST" class="mp-form">
+              <input type="hidden" name="receipt" value={receipt.id} />
+              <input type="hidden" name="revision" value={receipt.revision} />
+              <input
+                type="hidden"
+                name="request_id"
+                value={form?.values?.receipt === receipt.id
+                  ? form.values.request_id
+                  : data.requestId}
+              />
+              <label
+                >Correct reference
+                <input
+                  name="reference"
+                  maxlength="100"
+                  required
+                  value={form?.values?.receipt === receipt.id && form.values.reference !== undefined
+                    ? form.values.reference
+                    : receipt.reference}
+                />
+              </label>
+              <label
+                >Reason for reference correction
+                <textarea
+                  name="reason"
+                  maxlength="1000"
+                  required
+                  value={form?.values?.receipt === receipt.id && form.values.reference !== undefined
+                    ? form.values.reason
+                    : ''}></textarea>
+              </label>
+              <p>
+                Amount and date stay unchanged. Previous references remain reserved for this
+                receipt, even after restoration.
+              </p>
+              <button type="submit" class="mp-button primary">Save reference correction</button>
+            </form>
+          </details>
         {/if}
       </article>
     {:else}<p>No cash records yet.</p>{/each}
@@ -99,15 +139,21 @@
     <div class="mp-panel-heading"><h2>Correction history</h2></div>
     <p class="mp-muted">
       Showing {info.history.length} of {info.history_count} permanent entries, newest first. Restoring
-      an amount does not erase earlier corrections.
+      a value does not erase earlier corrections.
     </p>
     {#each info.history as entry (entry.id)}
       <article class="mp-form">
         <h3>{entry.reference} · Version {entry.revision}</h3>
-        <p>{usd(entry.before)} → {usd(entry.after)} · {dateTime(entry.occurred_at)}</p>
+        {#if entry.field === 'reference'}
+          <p>
+            Reference: {entry.before_reference} → {entry.after_reference} · {dateTime(
+              entry.occurred_at
+            )}
+          </p>
+        {:else}<p>{usd(entry.before)} → {usd(entry.after)} · {dateTime(entry.occurred_at)}</p>{/if}
         <p>{entry.reason}</p>
         <p class="mp-muted">Recorded by: {entry.actor}</p>
       </article>
-    {:else}<p>No amount corrections recorded.</p>{/each}
+    {:else}<p>No cash corrections recorded.</p>{/each}
   </section>
 </div>

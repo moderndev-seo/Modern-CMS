@@ -265,13 +265,14 @@ class ReceiptAllocation(BaseOrgModel):
 
 
 class ReceiptCorrection(BaseOrgModel):
-    """Permanent amount-correction evidence; never represents a money transfer."""
+    """Permanent cash-correction evidence; never represents a money transfer."""
 
     patient = models.ForeignKey(Patient, on_delete=models.PROTECT)
     receipt = models.ForeignKey(Receipt, on_delete=models.PROTECT)
     revision = models.PositiveIntegerField()
     request_id = models.UUIDField()
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    reference = models.CharField(max_length=100, null=True, blank=True)
     reason = models.CharField(max_length=1000)
     snapshot = models.JSONField(default=dict)
 
@@ -335,5 +336,20 @@ class ReceiptExclusion(BaseOrgModel):
                     | models.Q(excluded=False, retained__isnull=True)
                 ),
                 name="mp_exclusion_retained",
+            ),
+        ]
+
+
+class ReceiptReference(BaseOrgModel):
+    """Permanent deduplication keys reserved by the receipt database trigger."""
+
+    receipt = models.ForeignKey(Receipt, on_delete=models.PROTECT)
+    reference = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = "mp_cash_reference_reservation"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "reference"], name="mp_reserved_cash_reference"
             ),
         ]

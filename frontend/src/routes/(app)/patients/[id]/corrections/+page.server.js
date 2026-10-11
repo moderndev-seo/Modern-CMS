@@ -16,10 +16,13 @@ export const actions = {
   default: async (event) => {
     const form = await event.request.formData();
     const values = Object.fromEntries(
-      ['receipt', 'revision', 'request_id', 'amount', 'reason'].map((key) => [
-        key,
-        String(form.get(key) || '')
-      ])
+      [
+        'receipt',
+        'revision',
+        'request_id',
+        form.has('reference') ? 'reference' : 'amount',
+        'reason'
+      ].map((key) => [key, String(form.get(key) || '')])
     );
     try {
       await apiRequest(
