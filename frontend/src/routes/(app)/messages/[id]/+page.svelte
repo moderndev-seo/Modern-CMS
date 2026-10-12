@@ -3,11 +3,14 @@
   import { resolve } from '$app/paths';
   import { asInternalPath } from '$lib/utils/paths.js';
   import { dateTime, nowInput } from '$lib/modern-practice.js';
+  import DraftGuard from '$lib/components/modern-practice/DraftGuard.svelte';
   import RecordPages from '$lib/components/modern-practice/RecordPages.svelte';
   let { data, form } = $props();
   let info = $derived(data.detail);
   let thread = $derived(info.conversation);
   let draft = $derived(form?.values?.action === 'draft' ? form.values.draft : thread.draft);
+  /** @type {HTMLFormElement | undefined} */
+  let draftForm = $state();
   let templateId = $state('');
   const kinds = {
     note: 'Internal note',
@@ -163,7 +166,8 @@
               if (chosen) draft = draft ? `${draft}\n\n${chosen.body}` : chosen.body;
             }}>Append template to draft</button
           >{/if}
-        <form method="POST" action="?/draft" class="mp-form">
+        <DraftGuard dirty={draft !== thread.draft} {draftForm} />
+        <form bind:this={draftForm} method="POST" action="?/draft" class="mp-form">
           <input
             type="hidden"
             name="request_id"

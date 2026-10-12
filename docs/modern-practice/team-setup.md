@@ -144,3 +144,5 @@ After the base fictional seed has an active administrator in both TEST practices
 ## Local Reviews demo
 
 After migration and the base demo seed with an active administrator in both TEST practices, run `docker compose exec backend python manage.py seed_modern_practice_reviews`. Open http://localhost:5181/reviews?start=2026-09-01&end=2026-09-30. Each practice gets three fictional manual reviews (one unrated/Unknown) and one draft-history entry; rerunning preserves edits/statuses. See [Milestone 5](milestone-five.md) for summary definitions, archive/restoration and limitations. Nothing is requested from patients or posted to a provider. The live verification command expects unchanged seeded review counts/averages; it must not reset user edits to satisfy those expectations.
+
+Use the [Messages and Reviews acceptance walkthrough](messages-reviews-acceptance.md) for a team demo and to record a human acceptance decision.

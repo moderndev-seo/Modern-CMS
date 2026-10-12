@@ -39,6 +39,10 @@ The command requires the exact existing fictional TEST practice names and patien
 
 No provider synchronization, review invitations, invitation consent/preferences, delivery tracking, response-rate measurement, automated reminders, public reply posting, private feedback form, automated reply/privacy screening, attachments or portal. No unlinked/anonymous review record: this first workflow requires an existing patient association. No external review ID or automatic duplicate detection; request IDs prevent request retries, not two separately entered copies. Staff must verify facts and use local archive/replacement for mistakes. Archival is not deletion and does not remove public feedback.
 
-One shared draft per review; no automatic save or editing lock. Prior draft text is retained, and changing pages can discard unsaved text. Existing Task behavior/permissions apply. No full accessibility or load acceptance, healthcare compliance/security audit, private backup/restore drill or human team acceptance is implied.
+One shared draft per review; no automatic save or editing lock. Prior draft text is retained, and confirming navigation discards unsaved text; the guard below now asks first. Existing Task behavior/permissions apply. No full accessibility or load acceptance, healthcare compliance/security audit, private backup/restore drill or human team acceptance is implied.
 
 Next: team walkthrough and concrete fixes; then explicitly scope review-request preparation and preferences if needed before pilot readiness. Sending, external connections and deployment require separate authorization. Human acceptance needs a reviewer/date/findings/decision and remains pending for this workflow and the earlier milestones.
+
+## Draft navigation protection
+
+Messages and Reviews now warn before navigating away or submitting another form while their local draft differs from the saved text. Cancel keeps the edit; OK discards it. Saving the draft remains available. Reload/close prompts use browser-controlled wording and are not guaranteed on every device or crash. No autosave, browser storage, protection for other form fields or editing lock was added. See the [team acceptance walkthrough](messages-reviews-acceptance.md); human acceptance remains pending.

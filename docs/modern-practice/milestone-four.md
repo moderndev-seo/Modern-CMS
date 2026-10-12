@@ -40,8 +40,12 @@ Use fictional text only. Successful editing tests run in an isolated test databa
 
 ## Limits and proposed next work
 
-No email/SMS inbox synchronization, sending, delivery/read receipts, automatic reminders, attachments, patient portal or live providers. Manual outgoing logs do not send anything. There are no template variables or automatic personalization. There is one shared draft per conversation; drafts are visible to authorized patient staff and previous text remains in history. There is no automatic save, editing lock or full-text history search. Choosing a page/navigation can discard unsaved text. Ownership is an operational label, not a security boundary or subscription.
+No email/SMS inbox synchronization, sending, delivery/read receipts, automatic reminders, attachments, patient portal or live providers. Manual outgoing logs do not send anything. There are no template variables or automatic personalization. There is one shared draft per conversation; drafts are visible to authorized patient staff and previous text remains in history. There is no automatic save, editing lock or full-text history search. Choosing to discard an unsaved draft still loses that text; the navigation guard below now asks first. Ownership is an operational label, not a security boundary or subscription.
 
 Conversation entries and subjects cannot be edited/deleted through this workflow; add a clarification or start another conversation. Templates have revision checks for active state but no separate historical archive/reactivate event list. Follow-ups retain existing Task semantics and are patient-linked, not a conversation-specific task model. Appointment scheduling, finances and Growth are unchanged. This is not a claim of healthcare compliance, production readiness, scalability or team acceptance.
 
-Next: team walkthrough of this local Messages workflow and any concrete fixes, then scope Milestone 5 local review tracking. Later proposed work is pilot readiness/security/backup validation, followed only by separately authorized integrations and deployment.
+Next: team walkthrough of local Messages and the now-implemented Milestone 5 Reviews workflow, followed by concrete fixes. Later proposed work is pilot readiness/security/backup validation, followed only by separately authorized integrations and deployment.
+
+## Draft navigation protection
+
+Messages and Reviews now warn before navigating away or submitting another form while their local draft differs from the saved text. Cancel keeps the edit; OK discards it. Saving the draft remains available. Reload/close prompts use browser-controlled wording and are not guaranteed on every device or crash. No autosave, browser storage, protection for other form fields or editing lock was added. See the [team acceptance walkthrough](messages-reviews-acceptance.md); human acceptance remains pending.

@@ -3,10 +3,14 @@
   import { resolve } from '$app/paths';
   import { asInternalPath } from '$lib/utils/paths.js';
   import { dateTime } from '$lib/modern-practice.js';
+  import DraftGuard from '$lib/components/modern-practice/DraftGuard.svelte';
   import RecordPages from '$lib/components/modern-practice/RecordPages.svelte';
   let { data, form } = $props();
   let info = $derived(data.detail);
   let review = $derived(info.review);
+  /** @type {HTMLFormElement | undefined} */
+  let draftForm = $state();
+  let draft = $derived(form?.values && 'draft' in form.values ? form.values.draft : review.draft);
   const label = (options, value) => options.find(([key]) => key === value)?.[1] || value;
 </script>
 
@@ -61,7 +65,8 @@
           Visible to staff with patient access. Save an empty draft to clear it; previous text stays
           in history.
         </p>
-        <form method="POST" action="?/draft" class="mp-form">
+        <DraftGuard dirty={draft !== review.draft} {draftForm} />
+        <form bind:this={draftForm} method="POST" action="?/draft" class="mp-form">
           <input
             type="hidden"
             name="request_id"
@@ -69,11 +74,10 @@
           /><input type="hidden" name="revision" value={review.revision} /><label
             >Reply draft<textarea
               name="draft"
+              bind:value={draft}
               rows="7"
               maxlength="5000"
-              readonly={review.status === 'archived'}
-              >{form?.values && 'draft' in form.values ? form.values.draft : review.draft}</textarea
-            ></label
+              readonly={review.status === 'archived'}></textarea></label
           >{#if review.status === 'archived'}<p>
               Restore this record to edit its draft.
             </p>{:else}<button class="mp-button">Save local draft</button>{/if}
