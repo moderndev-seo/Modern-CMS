@@ -43,6 +43,7 @@ docker compose exec backend python manage.py makemigrations --check --dry-run
 docker compose exec backend ruff check patients common/rls
 docker compose exec frontend npm run check
 docker compose exec frontend npm test -- --run src/lib/modern-practice.test.js
+docker compose exec backend python manage.py seed_modern_practice_messages
 docker compose exec backend python manage.py verify_modern_practice --member-email admin@localhost --frontend-url http://frontend:5181
 ```
 
@@ -60,7 +61,7 @@ If `test_mp_milestone` already exists, skip `createdb`. Django prefixes `mp_mile
 ## Repository layout and collaboration
 
 - `backend/patients/`: Modern Practice models, API, reporting, seed, tests and migrations.
-- `frontend/src/routes/(app)/patients/` and `growth/`: new web workflows.
+- `frontend/src/routes/(app)/patients/`, `growth/` and `messages/`: new web workflows.
 - `frontend/src/lib/modern-practice*`: presentation helpers and styling.
 - `docker-compose.yml`, `Dockerfile`, `frontend/Dockerfile`, `docker/`: local stack.
 - `docs/modern-practice/`: milestones, rules, validation and limitations.
@@ -134,3 +135,7 @@ On an existing clone, pull the current public main and run `docker compose up --
 - **Financial review:** Patient → Billing review → Internal statement and CSV. All-date adjusted charges include valid internal credits; cash remains receipts less refunds. Unavailable balances stay blank in CSV. Exports include permanent credit/cash correction/exclusion history, sanitize spreadsheet formula-like text and require administrator/contact/practice access. Downloads use private/no-store responses. Live PostgreSQL generation uses a read-only repeatable-read transaction; it is not an accounting close, issued invoice/credit note or proof of bank settlement. Keep exported financial records private; never commit them.
 
 Complete the [Milestone 3 acceptance walkthrough](milestone-three-acceptance.md) using your own disposable fictional records. The owner's shared demonstration was not changed to rehearse successful corrections. GitHub contains code/instructions, not those saved database records. Full accessibility/assistive-technology and load acceptance remain outstanding.
+
+## Local Messages demo
+
+After the base fictional seed has an active administrator in both TEST practices, run `docker compose exec backend python manage.py seed_modern_practice_messages`. It preserves existing conversation edits when rerun. Open http://localhost:5181/messages. See [Milestone 4](milestone-four.md) for the workflow, schema choices, permissions and limitations. Nothing is sent to patients.

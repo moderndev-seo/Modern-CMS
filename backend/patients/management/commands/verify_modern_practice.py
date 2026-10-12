@@ -201,6 +201,12 @@ class Command(BaseCommand):
                         "Internal financial statement",
                     ),
                     ("/practice-modules/reviews", "Not implemented"),
+                    ("/messages", "Local only"),
+                    ("/messages/templates", "Message templates"),
+                    (
+                        f"/messages/{demo_id(key + ':messages:conversation')}",
+                        "Conversation history",
+                    ),
                 ):
                     page = front.get(
                         options["frontend_url"].rstrip("/") + path, timeout=180
@@ -210,7 +216,7 @@ class Command(BaseCommand):
                             f"Frontend page {path} failed: HTTP {page.status_code}"
                         )
                 self.stdout.write(
-                    "Twelve authenticated frontend routes rendered successfully over HTTP."
+                    "Fifteen authenticated frontend routes rendered successfully over HTTP."
                 )
         reversal_checks = 0
         for key, session in sessions.items():
@@ -638,6 +644,64 @@ class Command(BaseCommand):
             appointment_checks += len(rejected)
         self.stdout.write(
             f"{appointment_checks} appointment HTTP isolation checks passed."
+        )
+        message_checks = 0
+        for key, session in sessions.items():
+            other = "cedar" if key == "harbor" else "harbor"
+            own_id = demo_id(key + ":messages:conversation")
+            other_id = demo_id(other + ":messages:conversation")
+            own = session.get(f"{root}messages/{own_id}/", timeout=90)
+            own.raise_for_status()
+            before = sessions[other].get(f"{root}messages/{other_id}/", timeout=90)
+            before.raise_for_status()
+            rejected = [
+                session.get(f"{root}messages/{other_id}/", timeout=90),
+                session.patch(
+                    f"{root}messages/{other_id}/",
+                    json={
+                        "action": "draft",
+                        "draft": "MUST-BE-REJECTED",
+                        "revision": before.json()["conversation"]["revision"],
+                        "request_id": str(uuid4()),
+                    },
+                    timeout=90,
+                ),
+                session.post(
+                    f"{root}messages/{other_id}/entries/",
+                    json={
+                        "kind": "note",
+                        "body": "MUST-BE-REJECTED",
+                        "occurred_at": "2026-09-18T12:00:00Z",
+                        "request_id": str(uuid4()),
+                    },
+                    timeout=90,
+                ),
+                session.post(
+                    f"{root}messages/",
+                    json={
+                        "patient": str(demo_id(other + ":alex")),
+                        "subject": "MUST-BE-REJECTED",
+                        "request_id": str(uuid4()),
+                    },
+                    timeout=90,
+                ),
+                session.patch(
+                    f"{root}messages/templates/{demo_id(other + ':messages:template')}/",
+                    json={"active": False, "revision": 0},
+                    timeout=90,
+                ),
+            ]
+            if any(r.status_code != 404 for r in rejected):
+                raise CommandError("Local messages cross-practice rejection failed.")
+            after = sessions[other].get(f"{root}messages/{other_id}/", timeout=90)
+            after.raise_for_status()
+            if after.json() != before.json():
+                raise CommandError(
+                    "Foreign conversation changed during rejection checks."
+                )
+            message_checks += len(rejected)
+        self.stdout.write(
+            f"{message_checks} local messages HTTP isolation checks passed; foreign history unchanged."
         )
         anonymous = requests.get(root, timeout=90)
         if anonymous.status_code not in (401, 403):

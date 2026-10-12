@@ -9,10 +9,22 @@ from patients.corrections import PatientCorrections
 from patients.credits import CreateInvoiceCredit, ReverseInvoiceCredit
 from patients.exclusions import PatientExclusions
 from patients.matching import MatchPayments, ReversePaymentMatch
+from patients.messages import (
+    ConversationDetail,
+    ConversationEntries,
+    MessagesInbox,
+    MessageTemplates,
+    TemplateDetail,
+)
 from patients.statements import PatientStatement
 
 urlpatterns = [
     path("", views.PatientList.as_view()),
+    path("messages/", MessagesInbox.as_view()),
+    path("messages/templates/", MessageTemplates.as_view()),
+    path("messages/templates/<uuid:template_pk>/", TemplateDetail.as_view()),
+    path("messages/<uuid:conversation_pk>/", ConversationDetail.as_view()),
+    path("messages/<uuid:conversation_pk>/entries/", ConversationEntries.as_view()),
     path("contacts/", views.ContactSearch.as_view()),
     path("growth/", views.Growth.as_view()),
     path("spend/", views.Spend.as_view()),

@@ -354,3 +354,91 @@ class ReceiptReference(BaseOrgModel):
                 fields=["org", "reference"], name="mp_reserved_cash_reference"
             ),
         ]
+
+
+class LocalConversation(BaseOrgModel):
+    """Staff workspace only: no transport, recipient address or delivery state."""
+
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT)
+    subject = models.CharField(max_length=200)
+    request_id = models.UUIDField()
+    owner = models.ForeignKey(
+        "common.Profile", null=True, blank=True, on_delete=models.PROTECT
+    )
+    status = models.CharField(
+        max_length=16,
+        default="open",
+        choices=[("open", "Open"), ("waiting", "Waiting"), ("resolved", "Resolved")],
+    )
+    draft = models.TextField(blank=True, default="", max_length=5000)
+    revision = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "mp_local_conversation"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_conversation_request"
+            )
+        ]
+
+
+class LocalMessage(BaseOrgModel):
+    conversation = models.ForeignKey(LocalConversation, on_delete=models.PROTECT)
+    kind = models.CharField(
+        max_length=20,
+        choices=[
+            ("note", "Internal note"),
+            ("received", "Manually logged incoming"),
+            ("outbound_log", "Manually logged outgoing"),
+        ],
+    )
+    body = models.TextField(max_length=5000)
+    occurred_at = models.DateTimeField(default=timezone.now)
+    request_id = models.UUIDField()
+
+    class Meta:
+        db_table = "mp_local_message"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_local_message_request"
+            )
+        ]
+
+
+class ConversationChange(BaseOrgModel):
+    conversation = models.ForeignKey(LocalConversation, on_delete=models.PROTECT)
+    action = models.CharField(
+        max_length=16, choices=[("state", "Ownership/status"), ("draft", "Local draft")]
+    )
+    payload = models.JSONField()
+    before = models.JSONField(default=dict)
+    after = models.JSONField(default=dict)
+    revision = models.PositiveIntegerField()
+    request_id = models.UUIDField()
+
+    class Meta:
+        db_table = "mp_conversation_change"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_conversation_change_request"
+            ),
+            models.UniqueConstraint(
+                fields=["conversation", "revision"], name="mp_conversation_revision"
+            ),
+        ]
+
+
+class LocalMessageTemplate(BaseOrgModel):
+    title = models.CharField(max_length=100)
+    body = models.TextField(max_length=5000)
+    active = models.BooleanField(default=True)
+    revision = models.PositiveIntegerField(default=0)
+    request_id = models.UUIDField()
+
+    class Meta:
+        db_table = "mp_local_message_template"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_message_template_request"
+            )
+        ]
