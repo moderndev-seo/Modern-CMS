@@ -38,6 +38,7 @@ Before pulling updates, save your work on a feature branch. Follow migration not
 ## Verification
 
 ```bash
+docker compose exec backend python manage.py check_practice_setup
 docker compose exec backend python manage.py check
 docker compose exec backend python manage.py makemigrations --check --dry-run
 docker compose exec backend ruff check patients common/rls
@@ -146,3 +147,13 @@ After the base fictional seed has an active administrator in both TEST practices
 After migration and the base demo seed with an active administrator in both TEST practices, run `docker compose exec backend python manage.py seed_modern_practice_reviews`. Open http://localhost:5181/reviews?start=2026-09-01&end=2026-09-30. Each practice gets three fictional manual reviews (one unrated/Unknown) and one draft-history entry; rerunning preserves edits/statuses. See [Milestone 5](milestone-five.md) for summary definitions, archive/restoration and limitations. Nothing is requested from patients or posted to a provider. The live verification command expects unchanged seeded review counts/averages; it must not reset user edits to satisfy those expectations.
 
 Use the [Messages and Reviews acceptance walkthrough](messages-reviews-acceptance.md) for a team demo and to record a human acceptance decision.
+
+## Read-only local setup check
+
+Run `docker compose exec backend python manage.py check_practice_setup` after startup or pulling updates. Add `--json` for machine-readable output. Success exits zero; failed checks exit nonzero and leave configuration/data unchanged. JSON is printed to stdout; command errors go to stderr. The command reads schema catalogs and migration metadata only, without querying patient rows, printing environment values, granting privileges or applying migrations.
+
+It checks PostgreSQL, a non-superuser application role without BYPASSRLS, enabled and forced RLS plus both expected policy names on every table in the central tenant registry, no pending migrations, and a console/in-memory/dummy email backend. Console is the normal local sign-in backend; dummy/in-memory do not provide sign-in links through worker logs.
+
+If it fails, wait for startup and rerun. For pending migrations, use the normal documented migration/startup process. For role or RLS failures, compare your private setup with the repository instructions and investigate the named table; do not switch to the superuser or disable RLS to make the check pass. Unexpected non-local email settings require investigation before using the fictional demo. A database inspection failure deliberately omits the underlying exception to avoid exposing private connection values.
+
+This is a narrow configuration check, not a production-readiness certificate. It does not validate policy expressions, exercise cross-practice isolation, check web/worker responsiveness, inspect other live-service configuration, verify backups, or replace permission/API tests and human acceptance. Follow the remaining checks above.

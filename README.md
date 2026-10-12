@@ -17,6 +17,7 @@ docker compose logs -f backend
 Wait for migrations, administrator creation, and Django startup to finish. First builds can take several minutes. Press Ctrl+C to stop following logs; the containers stay running.
 
 ```bash
+docker compose exec backend python manage.py check_practice_setup
 docker compose exec backend python manage.py seed_modern_practice --member-email admin@localhost
 ```
 
