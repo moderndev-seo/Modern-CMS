@@ -33,6 +33,8 @@ INSERT_POLICY = "org_insert_check"
 # Table names must match actual PostgreSQL table names (check via \dt)
 ORG_SCOPED_TABLES = [
     "mp_patient",
+    "mp_practice_review",
+    "mp_review_change",
     "mp_local_conversation",
     "mp_local_message",
     "mp_conversation_change",

@@ -48,6 +48,7 @@ Administrator receipt split allocations are available from Patient → Billing r
 - Audited administrator cash amount/reference/date corrections, simple duplicate-payment exclusion/restoration, and appointment outcome corrections that preserve superseded attendance history.
 - Financial history pagination and an internal statement/CSV including adjusted charges, credits, collected cash and audit evidence.
 - Local-only patient conversations, shared drafts, staff ownership, templates and patient follow-up queues; no message is sent.
+- Local review records, rating/source summaries, internal reply drafts, audited status/archive/restore history and patient follow-ups; no provider connection or public reply posting.
 - Practice permissions, PostgreSQL RLS and cross-practice relationship checks.
 
 Existing CRM tools remain accessible. The inherited Flutter app is included as upstream source; Modern Practice's new screens are implemented in the web app, not in that mobile client.
@@ -56,9 +57,9 @@ Existing CRM tools remain accessible. The inherited Flutter app is included as u
 
 The rerunnable seed creates two fictional practices. For **September 1–30, 2026**, each starts with 3 leads, 2 booked patients and 1 treated patient. Harbor has $1,100 net collected; Cedar has $700. The seed preserves existing records and does not reset changes. Later manual demo appointments/tasks are not part of the seed.
 
-Milestone 3 essential workflows are implemented; [team acceptance](docs/modern-practice/milestone-three-acceptance.md) remains pending. Complex/refunded duplicates, duplicate refunds, many-to-many legacy matching, issued credit-note documents/legacy invoice exports, provider/room availability, timezone configuration, calendar connections and reminders remain deferred. The new internal statement/CSV includes internal credits but does not alter legacy invoice documents. Milestone 4 now has a local-only Messages workflow; Reviews remains planned. No live advertising, messaging, review or payment integrations have been connected. Production deployment and healthcare compliance review are separate work.
+Milestone 3 essential workflows are implemented; [team acceptance](docs/modern-practice/milestone-three-acceptance.md) remains pending. Complex/refunded duplicates, duplicate refunds, many-to-many legacy matching, issued credit-note documents/legacy invoice exports, provider/room availability, timezone configuration, calendar connections and reminders remain deferred. The new internal statement/CSV includes internal credits but does not alter legacy invoice documents. Milestone 4 has a local-only Messages workflow; Milestone 5 now has local review tracking. Connected invitations, provider synchronization and public replies remain unavailable. No live advertising, messaging, review or payment integrations have been connected. Production deployment and healthcare compliance review are separate work.
 
-[Milestone 1](docs/modern-practice/milestone-one.md) · [Milestone 2](docs/modern-practice/milestone-two.md) · [Milestone 3](docs/modern-practice/milestone-three.md) · [Milestone 4](docs/modern-practice/milestone-four.md)
+[Milestone 1](docs/modern-practice/milestone-one.md) · [Milestone 2](docs/modern-practice/milestone-two.md) · [Milestone 3](docs/modern-practice/milestone-three.md) · [Milestone 4](docs/modern-practice/milestone-four.md) · [Milestone 5](docs/modern-practice/milestone-five.md)
 
 ## Working as a team
 

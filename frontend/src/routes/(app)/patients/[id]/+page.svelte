@@ -102,6 +102,7 @@
 <svelte:head><title>{patient.name} | Modern Practice</title></svelte:head>
 <div class="mp-page">
   <div class="mp-patient-links">
+    <a href={resolve(asInternalPath(`/reviews?patient=${data.patient.id}`))}>Local reviews</a>
     <a href={resolve(asInternalPath(`/messages?patient=${data.patient.id}`))}>Local messages</a>
     {#if patient.can_review_billing}<a
         href={resolve(asInternalPath(`/patients/${patient.id}/billing`))}>Billing review →</a

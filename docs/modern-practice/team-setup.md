@@ -44,6 +44,7 @@ docker compose exec backend ruff check patients common/rls
 docker compose exec frontend npm run check
 docker compose exec frontend npm test -- --run src/lib/modern-practice.test.js
 docker compose exec backend python manage.py seed_modern_practice_messages
+docker compose exec backend python manage.py seed_modern_practice_reviews
 docker compose exec backend python manage.py verify_modern_practice --member-email admin@localhost --frontend-url http://frontend:5181
 ```
 
@@ -61,7 +62,7 @@ If `test_mp_milestone` already exists, skip `createdb`. Django prefixes `mp_mile
 ## Repository layout and collaboration
 
 - `backend/patients/`: Modern Practice models, API, reporting, seed, tests and migrations.
-- `frontend/src/routes/(app)/patients/`, `growth/` and `messages/`: new web workflows.
+- `frontend/src/routes/(app)/patients/`, `growth/`, `messages/` and `reviews/`: new web workflows.
 - `frontend/src/lib/modern-practice*`: presentation helpers and styling.
 - `docker-compose.yml`, `Dockerfile`, `frontend/Dockerfile`, `docker/`: local stack.
 - `docs/modern-practice/`: milestones, rules, validation and limitations.
@@ -139,3 +140,7 @@ Complete the [Milestone 3 acceptance walkthrough](milestone-three-acceptance.md)
 ## Local Messages demo
 
 After the base fictional seed has an active administrator in both TEST practices, run `docker compose exec backend python manage.py seed_modern_practice_messages`. It preserves existing conversation edits when rerun. Open http://localhost:5181/messages. See [Milestone 4](milestone-four.md) for the workflow, schema choices, permissions and limitations. Nothing is sent to patients.
+
+## Local Reviews demo
+
+After migration and the base demo seed with an active administrator in both TEST practices, run `docker compose exec backend python manage.py seed_modern_practice_reviews`. Open http://localhost:5181/reviews?start=2026-09-01&end=2026-09-30. Each practice gets three fictional manual reviews (one unrated/Unknown) and one draft-history entry; rerunning preserves edits/statuses. See [Milestone 5](milestone-five.md) for summary definitions, archive/restoration and limitations. Nothing is requested from patients or posted to a provider. The live verification command expects unchanged seeded review counts/averages; it must not reset user edits to satisfy those expectations.

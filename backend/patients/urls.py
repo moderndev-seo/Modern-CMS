@@ -16,10 +16,13 @@ from patients.messages import (
     MessageTemplates,
     TemplateDetail,
 )
+from patients.reviews import ReviewDetail, ReviewList
 from patients.statements import PatientStatement
 
 urlpatterns = [
     path("", views.PatientList.as_view()),
+    path("reviews/", ReviewList.as_view()),
+    path("reviews/<uuid:review_pk>/", ReviewDetail.as_view()),
     path("messages/", MessagesInbox.as_view()),
     path("messages/templates/", MessageTemplates.as_view()),
     path("messages/templates/<uuid:template_pk>/", TemplateDetail.as_view()),

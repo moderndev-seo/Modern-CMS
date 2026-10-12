@@ -200,7 +200,8 @@ class Command(BaseCommand):
                         f"/patients/{demo_id(key + ':alex')}/statement",
                         "Internal financial statement",
                     ),
-                    ("/practice-modules/reviews", "Not implemented"),
+                    ("/reviews?start=2026-09-01&end=2026-09-30", "Recorded average"),
+                    (f"/reviews/{demo_id(key + ':reviews:alex')}", "Local reply draft"),
                     ("/messages", "Local only"),
                     ("/messages/templates", "Message templates"),
                     (
@@ -216,7 +217,7 @@ class Command(BaseCommand):
                             f"Frontend page {path} failed: HTTP {page.status_code}"
                         )
                 self.stdout.write(
-                    "Fifteen authenticated frontend routes rendered successfully over HTTP."
+                    "Sixteen authenticated frontend routes rendered successfully over HTTP."
                 )
         reversal_checks = 0
         for key, session in sessions.items():
@@ -702,6 +703,80 @@ class Command(BaseCommand):
             message_checks += len(rejected)
         self.stdout.write(
             f"{message_checks} local messages HTTP isolation checks passed; foreign history unchanged."
+        )
+        review_checks = 0
+        for key, session in sessions.items():
+            other = "cedar" if key == "harbor" else "harbor"
+            own_id, foreign_id = (
+                demo_id(key + ":reviews:alex"),
+                demo_id(other + ":reviews:alex"),
+            )
+            own = session.get(f"{root}reviews/{own_id}/", timeout=90)
+            own.raise_for_status()
+            summary_response = session.get(
+                f"{root}reviews/?start=2026-09-01&end=2026-09-30", timeout=90
+            )
+            summary_response.raise_for_status()
+            summary = summary_response.json()["summary"]
+            expected = 3.5 if key == "harbor" else 2.5
+            if (
+                summary["count"],
+                summary["rated_count"],
+                summary["unrated_count"],
+                summary["average"],
+            ) != (3, 2, 1, expected):
+                raise CommandError(
+                    "Expected unchanged fictional review examples; never reset edited demo data to pass this check."
+                )
+            before = sessions[other].get(f"{root}reviews/{foreign_id}/", timeout=90)
+            before.raise_for_status()
+            rejected = [
+                session.get(f"{root}reviews/{foreign_id}/", timeout=90),
+                session.patch(
+                    f"{root}reviews/{foreign_id}/",
+                    json={
+                        "action": "draft",
+                        "draft": "MUST-BE-REJECTED",
+                        "revision": before.json()["review"]["revision"],
+                        "request_id": str(uuid4()),
+                    },
+                    timeout=90,
+                ),
+                session.patch(
+                    f"{root}reviews/{foreign_id}/",
+                    json={
+                        "action": "status",
+                        "status": "archived",
+                        "reason": "MUST-BE-REJECTED",
+                        "revision": before.json()["review"]["revision"],
+                        "request_id": str(uuid4()),
+                    },
+                    timeout=90,
+                ),
+                session.post(
+                    f"{root}reviews/",
+                    json={
+                        "patient": str(demo_id(other + ":alex")),
+                        "rating": 1,
+                        "body": "MUST-BE-REJECTED",
+                        "reviewed_at": "2026-09-18T12:00:00Z",
+                        "request_id": str(uuid4()),
+                    },
+                    timeout=90,
+                ),
+                session.get(
+                    f"{root}reviews/?patient={demo_id(other + ':alex')}", timeout=90
+                ),
+            ]
+            if any(r.status_code != 404 for r in rejected):
+                raise CommandError("Reviews cross-practice rejection failed.")
+            after = sessions[other].get(f"{root}reviews/{foreign_id}/", timeout=90)
+            after.raise_for_status()
+            if before.json() != after.json():
+                raise CommandError("Foreign review changed during rejection checks.")
+            review_checks += len(rejected)
+        self.stdout.write(
+            f"{review_checks} review HTTP isolation checks passed; manual averages and unrated counts verified."
         )
         anonymous = requests.get(root, timeout=90)
         if anonymous.status_code not in (401, 403):

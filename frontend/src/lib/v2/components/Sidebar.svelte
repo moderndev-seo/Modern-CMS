@@ -155,13 +155,13 @@
   <div class="mp-brand">MODERN PRACTICE</div>
   <a class="mp-switch" href={resolve('/org')}>Switch practice ↗</a>
   <div class="mp-primary-nav">
-    {#each [{ href: '/', label: 'Today', icon: Sun, exact: true }, { href: '/messages', label: 'Messages', icon: MessageSquare }, { href: '/patients', label: 'Patients', icon: Users }, { href: '/invoices', label: 'Billing', icon: Receipt }, { href: '/practice-modules/reviews', label: 'Reviews', icon: Star, planned: true }, { href: '/growth', label: 'Growth', icon: TrendingUp }] as item (item.href)}
+    {#each [{ href: '/', label: 'Today', icon: Sun, exact: true }, { href: '/messages', label: 'Messages', icon: MessageSquare }, { href: '/patients', label: 'Patients', icon: Users }, { href: '/invoices', label: 'Billing', icon: Receipt }, { href: '/reviews', label: 'Reviews', icon: Star }, { href: '/growth', label: 'Growth', icon: TrendingUp }] as item (item.href)}
       <a
         class="v2-link mp-nav-item"
         href={resolve(asInternalPath(item.href))}
         aria-current={isActive(item.href, item.exact) ? 'page' : undefined}
       >
-        <item.icon />{item.label}{#if item.planned}<small>Planned</small>{/if}
+        <item.icon />{item.label}
       </a>
     {/each}
   </div>

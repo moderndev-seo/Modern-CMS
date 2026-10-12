@@ -442,3 +442,68 @@ class LocalMessageTemplate(BaseOrgModel):
                 fields=["org", "request_id"], name="mp_message_template_request"
             )
         ]
+
+
+class PracticeReview(BaseOrgModel):
+    """A manually recorded review; never a provider connection or published reply."""
+
+    SOURCES = [
+        ("google", "Google"),
+        ("healthgrades", "Healthgrades"),
+        ("yelp", "Yelp"),
+        ("other", "Other"),
+        ("unknown", "Unknown"),
+    ]
+    STATUSES = [
+        ("open", "Needs attention"),
+        ("in_progress", "In progress"),
+        ("handled", "Handled locally"),
+        ("archived", "Archived"),
+    ]
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT)
+    source = models.CharField(max_length=20, choices=SOURCES, default="unknown")
+    rating = models.PositiveSmallIntegerField(null=True, blank=True)
+    body = models.TextField(blank=True, default="", max_length=5000)
+    reviewed_at = models.DateTimeField()
+    request_id = models.UUIDField()
+    status = models.CharField(max_length=20, choices=STATUSES, default="open")
+    draft = models.TextField(blank=True, default="", max_length=5000)
+    revision = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "mp_practice_review"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_review_request"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(rating__isnull=True)
+                | models.Q(rating__gte=1, rating__lte=5),
+                name="mp_review_rating_range",
+            ),
+        ]
+
+
+class ReviewChange(BaseOrgModel):
+    review = models.ForeignKey(PracticeReview, on_delete=models.PROTECT)
+    action = models.CharField(
+        max_length=16,
+        choices=[("draft", "Local reply draft"), ("status", "Local status")],
+    )
+    payload = models.JSONField()
+    reason = models.CharField(max_length=1000, blank=True, default="")
+    before = models.JSONField(default=dict)
+    after = models.JSONField(default=dict)
+    revision = models.PositiveIntegerField()
+    request_id = models.UUIDField()
+
+    class Meta:
+        db_table = "mp_review_change"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_review_change_request"
+            ),
+            models.UniqueConstraint(
+                fields=["review", "revision"], name="mp_review_revision"
+            ),
+        ]
