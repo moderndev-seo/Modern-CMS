@@ -73,7 +73,7 @@ Original attribution stays immutable; unknown/missing source stays Unknown. Lead
 
 ## Next increments, in order
 
-1. Website intake adapter: consent-aware capture of approved source parameters, dedicated restricted server credentials, form handling for mixed platforms, anti-abuse controls, retention limits and no patient data in marketing tags. This sandbox JWT endpoint is not the public form endpoint.
+1. Website intake adapter: [local consent-controlled capture](website-intake.md) is implemented. Still needed: dedicated restricted server credentials, protected form handling for mixed platforms, anti-abuse controls and server retry/error retention. This sandbox JWT endpoint is not the public form endpoint.
 2. Identity reconciliation: authorized mapping across website/booking/payment connections, review of ambiguous matches and a durable failed/unmatched-event queue. Never merge patients by name alone.
 3. One selected booking/payment vendor pair: verified webhook signatures, source-specific money/status semantics, retries, backfill, mapping and reconciliation. Distinguish capture, settlement, refund, chargeback and payout fees; do not count pending authorizations as collections.
 4. Google Ads campaign/spend imports: explicit account/practice/campaign mapping, currency and timezone handling, no double counting alongside manual spend. Campaign-level revenue and tracking-coverage reporting.

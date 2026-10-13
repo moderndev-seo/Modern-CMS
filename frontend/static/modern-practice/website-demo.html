@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'"
+    />
+    <title>Modern Practice · Website capture TEST</title>
+    <style>
+      body {
+        margin: 0;
+        background: #f7f8fa;
+        color: #18263a;
+        font:
+          17px/1.6 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 850px;
+        margin: 3rem auto;
+        padding: 0 1.5rem;
+      }
+      h1 {
+        line-height: 1.15;
+        font-size: 2rem;
+      }
+      .label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: #445577;
+      }
+      fieldset,
+      pre {
+        padding: 1rem;
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.5rem;
+      }
+      button,
+      select {
+        font: inherit;
+        padding: 0.6rem 0.9rem;
+        margin: 0.3rem 0.3rem 0.3rem 0;
+      }
+      button {
+        cursor: pointer;
+        border: 1px solid #64748b;
+        border-radius: 0.35rem;
+        background: #fff;
+        color: #18263a;
+      }
+      :focus-visible {
+        outline: 3px solid #2563eb;
+        outline-offset: 3px;
+      }
+      pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="label">MODERN PRACTICE · FICTIONAL TEST ONLY</p>
+      <h1>Website attribution capture</h1>
+      <p>
+        Simulate an introduction and a later marketing visit. This developer demo runs in memory,
+        makes no data requests, and creates no CRM records. Reloading clears it.
+      </p>
+      <label for="consent">Simulated visitor consent</label>
+      <select id="consent">
+        <option value="pending">Not decided</option>
+        <option value="granted">Granted</option>
+        <option value="denied">Denied / withdrawn</option>
+      </select>
+      <fieldset>
+        <legend>Simulate an approved website visit</legend>
+        <button id="paid" type="button">Google Ads introduction</button>
+        <button id="email" type="button">Later email visit</button>
+        <button id="unknown" type="button">Visit without source</button>
+        <button id="reset" type="button">Clear this demo</button>
+      </fieldset>
+      <p id="status" role="status">Choose consent, then simulate a visit.</p>
+      <h2>First-touch fields for a website server</h2>
+      <pre id="lead">{"original_source":"unknown"}</pre>
+      <h2>Local observations</h2>
+      <pre id="observations">No observations captured.</pre>
+      <p>
+        The original source stays unchanged after later visits, including when the original source
+        is Unknown. Withdrawing consent clears local attribution; it does not erase any
+        already-submitted CRM record.
+      </p>
+      <p>
+        A production website still needs a consent manager, a protected server receiver, restricted
+        CRM credentials, retry handling and identity reconciliation. Browser observations are
+        unverified claims, not proof of an ad click or payment.
+      </p>
+    </main>
+    <script type="module" src="./website-demo.mjs"></script>
+  </body>
+</html>

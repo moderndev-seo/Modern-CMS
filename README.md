@@ -72,3 +72,8 @@ Clone this repository and create a branch for each change. Submit pull requests 
 Do not commit `.env` files, actual patient data, database exports, credentials, internal reference PDFs, or executive decks. Public handoff snapshots exclude those files and the old local Git history that contains internal artifacts. Original source code, migrations, tests, assets, dependency lockfiles and license notices are included.
 
 See [team setup and verification](docs/modern-practice/team-setup.md) for the checks to run. Upstream release automation is retained as disabled reference files in the public handoff; it must be deliberately configured before any publishing. Nothing in these setup steps deploys the application.
+
+
+### Website attribution capture (local developer demo)
+
+The dependency-free website adapter captures approved attribution only with explicit consent, preserves first touch and prepares fields for a future protected website receiver. It does not submit patients or connect live sites. Try [the fictional local demo](http://localhost:5181/modern-practice/website-demo.html), read [integration boundaries](docs/modern-practice/website-intake.md), and run `node --test scripts/test_website_attribution.mjs` with Node 20+.

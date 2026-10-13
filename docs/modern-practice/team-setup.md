@@ -161,3 +161,8 @@ This is a narrow configuration check, not a production-readiness certificate. It
 ## Attribution sandbox
 
 Migration `patients.0016_attribution_intake` adds three protected evidence tables without rewriting existing records. Administrators can open http://localhost:5181/attribution, select a TEST practice, create a test connection and run/resume a fictional lead-to-refund demonstration. This adds data to the chosen TEST practice; it is not a live connector. Read the [contract and demo instructions](closed-loop-attribution.md) before running it. Tests: `docker compose exec -e DBNAME=mp_milestone backend python -m pytest patients/tests/test_intake.py --no-cov -q --reuse-db --ds=crm.test_settings_postgres`.
+
+
+## Website capture developer demo
+
+Open http://localhost:5181/modern-practice/website-demo.html. This fictional in-memory demo needs no login, creates no CRM records and makes no data requests. Try consent → Google Ads introduction → later email, then withdrawal and an Unknown-first visit. Read [website capture setup and limits](website-intake.md) before adapting it to a site. Run `node --test scripts/test_website_attribution.mjs` from the repository root with Node 20+. Restricted credentials and protected website-to-CRM submission remain pending; never put an administrator JWT on a website.
