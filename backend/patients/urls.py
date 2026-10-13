@@ -8,6 +8,7 @@ from patients.billing import PatientBilling
 from patients.corrections import PatientCorrections
 from patients.credits import CreateInvoiceCredit, ReverseInvoiceCredit
 from patients.exclusions import PatientExclusions
+from patients.intake import AttributionConnections, AttributionEvents
 from patients.matching import MatchPayments, ReversePaymentMatch
 from patients.messages import (
     ConversationDetail,
@@ -21,6 +22,8 @@ from patients.statements import PatientStatement
 
 urlpatterns = [
     path("", views.PatientList.as_view()),
+    path("attribution/", AttributionConnections.as_view()),
+    path("attribution/<uuid:connection_pk>/events/", AttributionEvents.as_view()),
     path("reviews/", ReviewList.as_view()),
     path("reviews/<uuid:review_pk>/", ReviewDetail.as_view()),
     path("messages/", MessagesInbox.as_view()),

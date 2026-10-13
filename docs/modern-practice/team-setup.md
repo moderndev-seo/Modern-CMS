@@ -157,3 +157,7 @@ It checks PostgreSQL, a non-superuser application role without BYPASSRLS, enable
 If it fails, wait for startup and rerun. For pending migrations, use the normal documented migration/startup process. For role or RLS failures, compare your private setup with the repository instructions and investigate the named table; do not switch to the superuser or disable RLS to make the check pass. Unexpected non-local email settings require investigation before using the fictional demo. A database inspection failure deliberately omits the underlying exception to avoid exposing private connection values.
 
 This is a narrow configuration check, not a production-readiness certificate. It does not validate policy expressions, exercise cross-practice isolation, check web/worker responsiveness, inspect other live-service configuration, verify backups, or replace permission/API tests and human acceptance. Follow the remaining checks above.
+
+## Attribution sandbox
+
+Migration `patients.0016_attribution_intake` adds three protected evidence tables without rewriting existing records. Administrators can open http://localhost:5181/attribution, select a TEST practice, create a test connection and run/resume a fictional lead-to-refund demonstration. This adds data to the chosen TEST practice; it is not a live connector. Read the [contract and demo instructions](closed-loop-attribution.md) before running it. Tests: `docker compose exec -e DBNAME=mp_milestone backend python -m pytest patients/tests/test_intake.py --no-cov -q --reuse-db --ds=crm.test_settings_postgres`.

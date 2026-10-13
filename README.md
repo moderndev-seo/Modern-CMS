@@ -26,6 +26,7 @@ Open **http://localhost:5181/login**, enter **admin@localhost**, and request a s
 - Web app: http://localhost:5181
 - API documentation: http://localhost:8000/swagger-ui/
 - Patient journeys: http://localhost:5181/patients
+- Attribution sandbox (administrators): http://localhost:5181/attribution — [scope and demo](docs/modern-practice/closed-loop-attribution.md)
 - Growth: http://localhost:5181/growth?start=2026-09-01&end=2026-09-30
 
 [Detailed installation, restart, testing, and troubleshooting instructions](docs/modern-practice/team-setup.md).

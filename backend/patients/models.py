@@ -507,3 +507,56 @@ class ReviewChange(BaseOrgModel):
                 fields=["review", "revision"], name="mp_review_revision"
             ),
         ]
+
+
+class AttributionConnection(BaseOrgModel):
+    """Sandbox namespace, not a credential or a connected vendor account."""
+
+    name = models.CharField(max_length=100)
+    request_id = models.UUIDField()
+
+    class Meta:
+        db_table = "mp_attribution_connection"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["org", "request_id"], name="mp_attribution_connection_request"
+            )
+        ]
+
+
+class AttributionIdentity(BaseOrgModel):
+    connection = models.ForeignKey(AttributionConnection, on_delete=models.PROTECT)
+    external_id = models.CharField(max_length=100)
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT)
+
+    class Meta:
+        db_table = "mp_attribution_identity"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["connection", "external_id"],
+                name="mp_attribution_external_identity",
+            )
+        ]
+
+
+class AttributionEvent(BaseOrgModel):
+    connection = models.ForeignKey(AttributionConnection, on_delete=models.PROTECT)
+    identity = models.ForeignKey(AttributionIdentity, on_delete=models.PROTECT)
+    external_id = models.CharField(max_length=100)
+    kind = models.CharField(max_length=20)
+    payload_hash = models.CharField(max_length=64)
+    event = models.OneToOneField(
+        JourneyEvent, null=True, blank=True, on_delete=models.PROTECT
+    )
+    receipt = models.OneToOneField(
+        Receipt, null=True, blank=True, on_delete=models.PROTECT
+    )
+
+    class Meta:
+        db_table = "mp_attribution_event"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["connection", "external_id"],
+                name="mp_attribution_external_event",
+            )
+        ]
