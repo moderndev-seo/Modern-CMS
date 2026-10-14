@@ -1,5 +1,15 @@
 # Modern Practice CRM — project handoff
 
+## GitHub publication — October 14, 2026
+
+The verified remediation is published in [PR #1](https://github.com/moderndev-seo/Modern-CMS/pull/1), branch `codex/patient-authorization-ci`, targeting `main`. Implementation commit: `a84a50e4da981912e91e545cafb0d3f90a73580f`; public base remains `11e6d59a0ef79e6cefe6d5fe1a71859099557961`. The following handoff commit changes documentation only. The 57-file remediation tree matches the local reviewed snapshot exactly (`2a64cfd02db45644b9f28b94671475cdcff35f0d`).
+
+Git CLI publication lacked credentials; the connected GitHub API published the same tree using public history. The original local commit is preserved on `codex/remediation-local-snapshot` in the isolated clone. No remote URL was changed. The original development checkout was not modified during publication.
+
+Hosted [CI](https://github.com/moderndev-seo/Modern-CMS/actions/workflows/tests.yml) and [CodeQL](https://github.com/moderndev-seo/Modern-CMS/actions/workflows/codeql-analysis.yml) were triggered. Their final status must be checked against the latest PR head, not inferred from the accepted local baseline below; the publication report in the PR records the observed results. Required jobs: backend-tests, backend-tests-postgres, patient-security-postgres, frontend-checks, package-build, docs-build and Analyze (python). Security must use migrated PostgreSQL with NOSUPERUSER/NOBYPASSRLS and execute all patient/tenant security tests independently of compatibility failures.
+
+Independent review remains a merge gate: no CODEOWNERS file or qualified named reviewer was available, and the connected tool cannot enumerate repository collaborators. The owner must identify a reviewer with authorization/RLS/migration expertise; no self-review counts as approval. Do not merge, deploy, change repository settings or start the next milestone. No production or saved application database was changed; private decks/reference/output, secrets and logs are excluded.
+
 ## Current authorization and AI entrypoint — October 14, 2026
 
 The owner accepted the final local review and authorized committing the verified remediation, publishing only `codex/patient-authorization-ci` to `moderndev-seo/Modern-CMS`, opening a PR to `main`, and investigating hosted checks within this scope. No merge, deployment, production database changes, repository administration changes or next-phase implementation is authorized. This section supersedes the historical publication restrictions below.
