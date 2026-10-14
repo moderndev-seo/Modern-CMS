@@ -10,6 +10,7 @@ from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
 
 from common.permissions import is_org_admin
+from contacts.access import has_patient_link_access, patient_link_queryset
 from leads.models import Lead
 
 _DENIED = "You do not have Permission to perform this action"
@@ -28,6 +29,8 @@ def has_lead_access(profile, user, lead):
     id was never in the set and the check denied the person it existed to
     admit.
     """
+    if not has_patient_link_access(profile, lead, financial=True):
+        return False
     if is_org_admin(profile) or user.is_superuser:
         return True
     if profile.user_id == lead.created_by_id:
@@ -45,7 +48,9 @@ def visible_leads_qs(profile, user):
     with several assignees comes back once without ``distinct()``, and the
     queryset can sit inside a filtered ``Count`` annotation as it is.
     """
-    qs = Lead.objects.filter(org=profile.org)
+    qs = patient_link_queryset(
+        Lead.objects.filter(org=profile.org), profile, financial=True
+    )
     if is_org_admin(profile) or user.is_superuser:
         return qs
     return qs.filter(

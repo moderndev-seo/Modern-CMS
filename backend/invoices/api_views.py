@@ -31,7 +31,7 @@ from common.serializer import (
 )
 from common.utils import create_attachment
 from common.validators import date_param, payload_id_list, uuid_param, validate_uuid
-from contacts.access import visible_contacts_qs
+from contacts.access import assert_generic_patient_access, visible_contacts_qs
 from invoices.models import (
     UNPAID_STATUSES,
     Estimate,
@@ -52,6 +52,7 @@ from invoices.permissions import (
     get_estimate_or_error,
     get_invoice_or_error,
     get_recurring_or_error,
+    patient_finance_queryset,
     visible_invoices_qs,
 )
 from invoices.serializer import (
@@ -286,7 +287,9 @@ class InvoiceListView(APIView, LimitOffsetPagination):
                 {
                     "error": False,
                     "message": "Invoice created successfully",
-                    "invoice": InvoiceSerializer(invoice).data,
+                    "invoice": InvoiceSerializer(
+                        invoice, context={"request": self.request}
+                    ).data,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -333,7 +336,9 @@ class InvoiceDetailView(APIView):
 
         return Response(
             {
-                "invoice": InvoiceSerializer(invoice).data,
+                "invoice": InvoiceSerializer(
+                    invoice, context={"request": self.request}
+                ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
                 "comments": CommentSerializer(comments, many=True).data,
                 "history": InvoiceHistorySerializer(
@@ -395,7 +400,9 @@ class InvoiceDetailView(APIView):
                 {
                     "error": False,
                     "message": "Invoice updated successfully",
-                    "invoice": InvoiceSerializer(invoice).data,
+                    "invoice": InvoiceSerializer(
+                        invoice, context={"request": self.request}
+                    ).data,
                 }
             )
 
@@ -481,7 +488,9 @@ class InvoiceMarkPaidView(APIView):
             {
                 "error": False,
                 "message": "Payment recorded successfully",
-                "invoice": InvoiceSerializer(invoice).data,
+                "invoice": InvoiceSerializer(
+                    invoice, context={"request": self.request}
+                ).data,
             }
         )
 
@@ -559,7 +568,9 @@ class InvoiceDuplicateView(APIView):
                 {
                     "error": False,
                     "message": "Invoice duplicated successfully",
-                    "invoice": InvoiceSerializer(new_invoice).data,
+                    "invoice": InvoiceSerializer(
+                        new_invoice, context={"request": self.request}
+                    ).data,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -599,7 +610,9 @@ class InvoiceCancelView(APIView):
             {
                 "error": False,
                 "message": "Invoice cancelled successfully",
-                "invoice": InvoiceSerializer(invoice).data,
+                "invoice": InvoiceSerializer(
+                    invoice, context={"request": self.request}
+                ).data,
             }
         )
 
@@ -1024,7 +1037,9 @@ class EstimateListView(APIView, LimitOffsetPagination):
     def get_queryset(self):
         org = self.request.profile.org
 
-        queryset = Estimate.objects.filter(org=org).select_related(
+        queryset = patient_finance_queryset(
+            Estimate.objects.filter(org=org), self.request.profile
+        ).select_related(
             "account", "contact", "opportunity", "created_by", "converted_to_invoice"
         )
 
@@ -1107,7 +1122,9 @@ class EstimateListView(APIView, LimitOffsetPagination):
                 {
                     "error": False,
                     "message": "Estimate created",
-                    "estimate": EstimateSerializer(estimate).data,
+                    "estimate": EstimateSerializer(
+                        estimate, context={"request": self.request}
+                    ).data,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -1135,7 +1152,9 @@ class EstimateDetailView(APIView):
         ).order_by("display_order", "label")
         return Response(
             {
-                "estimate": EstimateSerializer(estimate).data,
+                "estimate": EstimateSerializer(
+                    estimate, context={"request": self.request}
+                ).data,
                 "custom_field_definitions": CustomFieldDefinitionSerializer(
                     cf_definitions, many=True
                 ).data,
@@ -1182,7 +1201,9 @@ class EstimateDetailView(APIView):
                 {
                     "error": False,
                     "message": "Estimate updated",
-                    "estimate": EstimateSerializer(estimate).data,
+                    "estimate": EstimateSerializer(
+                        estimate, context={"request": self.request}
+                    ).data,
                 }
             )
 
@@ -1278,7 +1299,9 @@ class EstimateConvertView(APIView):
             {
                 "error": False,
                 "message": "Estimate converted to invoice",
-                "invoice": InvoiceSerializer(invoice).data,
+                "invoice": InvoiceSerializer(
+                    invoice, context={"request": self.request}
+                ).data,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -1391,7 +1414,10 @@ class RecurringInvoiceListView(APIView, LimitOffsetPagination):
     @extend_schema(tags=["Recurring Invoices"], operation_id="recurring_list")
     def get(self, request):
         queryset = (
-            RecurringInvoice.objects.filter(org=request.profile.org)
+            patient_finance_queryset(
+                RecurringInvoice.objects.filter(org=request.profile.org),
+                request.profile,
+            )
             .select_related("account", "contact")
             .order_by("-created_at")
         )
@@ -1456,7 +1482,9 @@ class RecurringInvoiceListView(APIView, LimitOffsetPagination):
                 {
                     "error": False,
                     "message": "Recurring invoice created",
-                    "recurring_invoice": RecurringInvoiceSerializer(recurring).data,
+                    "recurring_invoice": RecurringInvoiceSerializer(
+                        recurring, context={"request": self.request}
+                    ).data,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -1484,7 +1512,9 @@ class RecurringInvoiceDetailView(APIView):
         ).order_by("display_order", "label")
         return Response(
             {
-                "recurring_invoice": RecurringInvoiceSerializer(recurring).data,
+                "recurring_invoice": RecurringInvoiceSerializer(
+                    recurring, context={"request": self.request}
+                ).data,
                 "custom_field_definitions": CustomFieldDefinitionSerializer(
                     cf_definitions, many=True
                 ).data,
@@ -1531,7 +1561,9 @@ class RecurringInvoiceDetailView(APIView):
                 {
                     "error": False,
                     "message": "Recurring invoice updated",
-                    "recurring_invoice": RecurringInvoiceSerializer(recurring).data,
+                    "recurring_invoice": RecurringInvoiceSerializer(
+                        recurring, context={"request": self.request}
+                    ).data,
                 }
             )
 
@@ -1822,6 +1854,7 @@ class InvoiceCommentDetailView(APIView):
     @extend_schema(tags=["Invoice Comments"], operation_id="comments_update")
     def put(self, request, pk):
         comment = self.get_object(pk)
+        assert_generic_patient_access(request.profile, comment)
         if not comment:
             return Response(
                 {"error": True, "message": "Comment not found"},
@@ -1851,6 +1884,7 @@ class InvoiceCommentDetailView(APIView):
     @extend_schema(tags=["Invoice Comments"], operation_id="comments_destroy")
     def delete(self, request, pk):
         comment = self.get_object(pk)
+        assert_generic_patient_access(request.profile, comment)
         if not comment:
             return Response(
                 {"error": True, "message": "Comment not found"},
@@ -1911,6 +1945,7 @@ class InvoiceAttachmentDetailView(APIView):
     @extend_schema(tags=["Invoice Attachments"], operation_id="attachments_destroy")
     def delete(self, request, pk):
         attachment = Attachments.objects.filter(id=pk, org=request.profile.org).first()
+        assert_generic_patient_access(request.profile, attachment)
         if not attachment:
             return Response(
                 {"error": True, "message": "Attachment not found"},
@@ -1989,7 +2024,9 @@ class InvoiceDashboardView(APIView):
         thirty_days_ago = today - timedelta(days=30)
 
         # Total invoices
-        all_invoices = Invoice.objects.filter(org=org)
+        all_invoices = patient_finance_queryset(
+            Invoice.objects.filter(org=org), request.profile
+        )
 
         # Status counts
         status_counts = (
@@ -2120,6 +2157,7 @@ class RevenueReportView(APIView):
             paid_at__date__gte=start_date,
             paid_at__date__lte=end_date,
         )
+        paid_invoices = patient_finance_queryset(paid_invoices, request.profile)
         paid_grouped = (
             paid_invoices.annotate(period=trunc("paid_at"))
             .values("period", "currency")
@@ -2132,6 +2170,7 @@ class RevenueReportView(APIView):
             issue_date__gte=start_date,
             issue_date__lte=end_date,
         )
+        invoiced_invoices = patient_finance_queryset(invoiced_invoices, request.profile)
         invoiced_grouped = (
             invoiced_invoices.annotate(period=trunc("issue_date"))
             .values("period", "currency")
@@ -2191,6 +2230,8 @@ class AgingReportView(APIView):
             status__in=UNPAID_STATUSES,
             amount_due__gt=0,
         ).select_related("account")
+
+        unpaid_invoices = patient_finance_queryset(unpaid_invoices, request.profile)
 
         # Categorize by age
         current = []  # Not yet due
@@ -2309,6 +2350,8 @@ def _first_visible_contact(contacts, profile):
     first, the contact list's own order, with the id breaking ties so the
     answer does not change between calls.
     """
+    if not is_org_admin(profile):
+        contacts = contacts.filter(patient__isnull=True)
     return (
         contacts.filter(id__in=visible_contacts_qs(profile).values("id"))
         .order_by("-created_at", "id")
@@ -2460,7 +2503,9 @@ class InvoiceFromOpportunityView(APIView):
             {
                 "error": False,
                 "message": "Invoice created successfully from opportunity",
-                "invoice": InvoiceSerializer(invoice).data,
+                "invoice": InvoiceSerializer(
+                    invoice, context={"request": self.request}
+                ).data,
             },
             status=status.HTTP_201_CREATED,
         )

@@ -64,8 +64,17 @@ class PATAuthentication(BaseAuthentication):
         if pat is None:
             pat = resolve_valid_pat(raw)
 
+        from common import scopes
+
+        denial = scopes.check_request(pat.scopes, request.method, request.path)
+        if denial is not None:
+            raise AuthenticationFailed(denial)
+
         profile = pat.profile
 
+        profile._patient_credential_allowed = scopes.patient_records_allow(
+            pat.scopes, request.method
+        )
         request.profile = profile
         request.org = pat.org
         request.META["org"] = str(pat.org.id)

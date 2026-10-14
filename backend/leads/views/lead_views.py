@@ -213,7 +213,9 @@ class LeadListView(APIView, LimitOffsetPagination):
         results_leads_open = self.paginate_queryset(
             queryset_open.distinct(), self.request, view=self
         )
-        open_leads = LeadSerializer(results_leads_open, many=True).data
+        open_leads = LeadSerializer(
+            results_leads_open, many=True, context={"request": self.request}
+        ).data
         if results_leads_open:
             offset = queryset_open.filter(id__gte=results_leads_open[-1].id).count()
             if offset == queryset_open.count():
@@ -234,7 +236,9 @@ class LeadListView(APIView, LimitOffsetPagination):
         results_leads_close = self.paginate_queryset(
             queryset_close.distinct(), self.request, view=self
         )
-        close_leads = LeadSerializer(results_leads_close, many=True).data
+        close_leads = LeadSerializer(
+            results_leads_close, many=True, context={"request": self.request}
+        ).data
         if results_leads_close:
             offset = queryset_close.filter(id__gte=results_leads_close[-1].id).count()
             if offset == queryset_close.count():
@@ -538,7 +542,9 @@ class LeadDetailView(APIView):
         users_excluding_team = Profile.objects.filter(id__in=users_excluding_team_id)
         context.update(
             {
-                "lead_obj": LeadSerializer(self.lead_obj).data,
+                "lead_obj": LeadSerializer(
+                    self.lead_obj, context={"request": self.request}
+                ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
                 "comments": LeadCommentSerializer(comments, many=True).data,
                 "users_mention": users_mention,
@@ -692,7 +698,9 @@ class LeadDetailView(APIView):
         ).order_by("-id")
         context.update(
             {
-                "lead_obj": LeadSerializer(self.lead_obj).data,
+                "lead_obj": LeadSerializer(
+                    self.lead_obj, context={"request": self.request}
+                ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
                 "comments": LeadCommentSerializer(comments, many=True).data,
             }
@@ -1084,6 +1092,7 @@ class LeadDetailView(APIView):
     )
     def delete(self, request, pk, **kwargs):
         self.object = self.get_object(pk)
+        access.assert_lead_access(request.profile, request.user, self.object)
         # The `and self.object.org == request.profile.org` conjunct that used
         # to close this condition was always True: `get_object` already scoped
         # the lookup to the caller's org. What remains is the role and

@@ -35,6 +35,7 @@ from common.serializer import (
 from common.utils import COUNTRIES, create_attachment, validate_attachment
 from common.validators import date_param, payload_id_list, uuid_list_param
 from contacts import access, swagger_params
+from contacts.access import assert_generic_patient_access
 from contacts.models import Contact
 from contacts.serializer import (
     ContactCommentEditSwaggerSerializer,
@@ -144,7 +145,9 @@ class ContactsListView(APIView, LimitOffsetPagination):
         results_contact = self.paginate_queryset(
             queryset.distinct(), self.request, view=self
         )
-        contacts = ContactSerializer(results_contact, many=True).data
+        contacts = ContactSerializer(
+            results_contact, many=True, context={"request": self.request}
+        ).data
         if results_contact:
             offset = queryset.filter(id__gte=results_contact[-1].id).count()
             if offset == queryset.count():
@@ -547,7 +550,9 @@ class ContactDetailView(APIView):
         context = {}
         contact_obj = self.get_object(pk)
         self.assert_contact_access(contact_obj)
-        context["contact_obj"] = ContactSerializer(contact_obj).data
+        context["contact_obj"] = ContactSerializer(
+            contact_obj, context={"request": self.request}
+        ).data
         assigned_data = []
         for each in contact_obj.assigned_to.all():
             assigned_dict = {}
@@ -606,6 +611,7 @@ class ContactDetailView(APIView):
                 "tasks": TaskSerializer(
                     visible_tasks_qs(self.request.profile).filter(contacts=contact_obj),
                     many=True,
+                    context={"request": self.request},
                 ).data,
                 "users_mention": users_mention,
                 # What this person is involved in. Contact is on the far side of
@@ -760,7 +766,9 @@ class ContactDetailView(APIView):
         ).order_by("-id")
         context.update(
             {
-                "contact_obj": ContactSerializer(self.contact_obj).data,
+                "contact_obj": ContactSerializer(
+                    self.contact_obj, context={"request": self.request}
+                ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
                 "comments": CommentSerializer(comments, many=True).data,
             }
@@ -888,6 +896,7 @@ class ContactCommentView(APIView):
     def put(self, request, pk, format=None):
         params = request.data
         obj = self.get_object(pk)
+        assert_generic_patient_access(request.profile, obj)
         if is_org_admin(request.profile) or request.profile == obj.commented_by:
             serializer = CommentSerializer(obj, data=params)
             if serializer.is_valid():
@@ -927,6 +936,7 @@ class ContactCommentView(APIView):
         """Handle partial updates to a comment."""
         params = request.data
         obj = self.get_object(pk)
+        assert_generic_patient_access(request.profile, obj)
         if is_org_admin(request.profile) or request.profile == obj.commented_by:
             serializer = CommentSerializer(obj, data=params, partial=True)
             if serializer.is_valid():
@@ -962,6 +972,7 @@ class ContactCommentView(APIView):
     )
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
+        assert_generic_patient_access(request.profile, self.object)
         if is_org_admin(request.profile) or request.profile == self.object.commented_by:
             self.object.delete()
             return Response(
@@ -1012,6 +1023,7 @@ class ContactAttachmentView(APIView):
             self.object = get_object_or_404(self.model, pk=pk, org=request.profile.org)
         except (DjangoValidationError, ValueError):
             raise Http404("No such attachment.")
+        assert_generic_patient_access(request.profile, self.object)
         if (
             is_org_admin(request.profile)
             or request.profile.user_id == self.object.created_by_id

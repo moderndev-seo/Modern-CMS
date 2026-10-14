@@ -198,6 +198,9 @@ class GetProfileAndOrg:
             )
             return _denied(denial)
 
+        pat.profile._patient_credential_allowed = scopes.patient_records_allow(
+            pat.scopes, request.method
+        )
         request.profile = pat.profile
         request.org = pat.org
         request.META["org"] = str(pat.org.id)
@@ -323,6 +326,7 @@ class GetProfileAndOrg:
                 )
                 return _denied(denial)
 
+            profile._patient_credential_allowed = False
             request.profile = profile
             request.org = organization
             request.META["org"] = str(organization.id)

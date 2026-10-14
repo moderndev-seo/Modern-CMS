@@ -8,7 +8,7 @@ A free, self-hosted, multi-tenant CRM built with Django REST Framework, SvelteKi
 ![SvelteKit](https://img.shields.io/badge/sveltekit-2.x-orange.svg)
 ![Svelte](https://img.shields.io/badge/svelte-5-orange.svg)
 ![Flutter](https://img.shields.io/badge/flutter-3.44+-blue.svg)
-![Coverage](./coverage-badge.svg)
+![Coverage](https://github.com/moderndev-seo/Modern-CMS/blob/main/coverage-badge.svg)
 
 **BottleCRM is an open source CRM you run on your own infrastructure.** It covers the full
 customer lifecycle: leads, accounts, contacts, opportunities, support tickets, tasks and
@@ -62,23 +62,23 @@ docker compose up --build
 ```
 
 Frontend at http://localhost:5181, API and Swagger UI at http://localhost:8000/swagger-ui/. See
-the [Docker quick start guide](docs/getting-started/docker-quick-start.md) for the default admin
+the [Docker quick start guide](getting-started/docker-quick-start.md) for the default admin
 login, loading demo data, and what each service does.
 
 ## Documentation
 
 The full documentation (setup, self-hosting, architecture, the REST API, and contributing) is
-built from this repository's [`docs/`](docs/) with MkDocs Material and publishes to Read the Docs
+built from this repository's [`docs/`](index.md) with MkDocs Material and publishes to Read the Docs
 at <https://django-crm.readthedocs.io/en/latest/>. Four starting points:
 
-- **[Getting started](docs/getting-started/docker-quick-start.md)**: Docker and manual setup, first sign-in, demo data.
-- **[Self-hosting](docs/self-hosting/requirements.md)**: requirements, production deployment, PostgreSQL and Row-Level Security, backups, security hardening.
-- **[API reference](docs/api/conventions.md)**: authentication, conventions, and every documented endpoint.
-- **[Contributing](docs/contributing/development-setup.md)**: local development setup, testing, code style, and how to open a pull request.
+- **[Getting started](getting-started/docker-quick-start.md)**: Docker and manual setup, first sign-in, demo data.
+- **[Self-hosting](self-hosting/requirements.md)**: requirements, production deployment, PostgreSQL and Row-Level Security, backups, security hardening.
+- **[API reference](api/conventions.md)**: authentication, conventions, and every documented endpoint.
+- **[Contributing](contributing/development-setup.md)**: local development setup, testing, code style, and how to open a pull request.
 
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, development checks, and pull request guidance.
+We welcome contributions! See [CONTRIBUTING.md](contributing/development-setup.md) for setup instructions, development checks, and pull request guidance.
 
 ## Community
 
@@ -88,7 +88,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instr
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/moderndev-seo/Modern-CMS/blob/main/LICENSE) file for details.
 
 ## Sponsors
 

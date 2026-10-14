@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from cases.models import Case
+from cases.access import visible_cases_qs
 from cases.serializer import CaseSerializer, parent_access_context
 from common import swagger_params
 from common.models import Comment, PersonalAccessToken, Profile, Teams, User
@@ -27,9 +27,9 @@ from common.serializer import (
 )
 from common.tasks import send_email_user_delete
 from common.utils import COUNTRIES, ROLES
-from contacts.models import Contact
+from contacts.access import visible_contacts_qs
 from contacts.serializer import ContactSerializer
-from opportunity.models import Opportunity
+from opportunity.access import visible_deals_qs
 from opportunity.serializer import OpportunitySerializer
 
 
@@ -330,17 +330,17 @@ class UserDetailView(APIView):
         context = {}
         context["profile_obj"] = ProfileSerializer(profile_obj).data
         # Security fix: Add org filter to prevent cross-org data leakage
-        opportunity_list = Opportunity.objects.filter(
-            assigned_to=profile_obj, org=request.profile.org
+        opportunity_list = visible_deals_qs(request.profile, request.user).filter(
+            assigned_to=profile_obj
         )
         context["opportunity_list"] = OpportunitySerializer(
-            opportunity_list, many=True
+            opportunity_list, many=True, context={"request": self.request}
         ).data
-        contacts = Contact.objects.filter(
-            assigned_to=profile_obj, org=request.profile.org
-        )
-        context["contacts"] = ContactSerializer(contacts, many=True).data
-        cases = Case.objects.filter(assigned_to=profile_obj, org=request.profile.org)
+        contacts = visible_contacts_qs(request.profile).filter(assigned_to=profile_obj)
+        context["contacts"] = ContactSerializer(
+            contacts, many=True, context={"request": self.request}
+        ).data
+        cases = visible_cases_qs(request.profile).filter(assigned_to=profile_obj)
         context["cases"] = CaseSerializer(
             cases, many=True, context=parent_access_context(request.profile, cases)
         ).data
@@ -348,7 +348,24 @@ class UserDetailView(APIView):
         comments = Comment.objects.filter(
             commented_by=profile_obj, org=request.profile.org
         )
-        context["comments"] = CommentSerializer(comments, many=True).data
+        from invoices.permissions import visible_invoices_qs
+        from leads.access import visible_leads_qs
+        from tasks.access import visible_tasks_qs
+
+        for model, visible in {
+            "contact": visible_contacts_qs(request.profile),
+            "task": visible_tasks_qs(request.profile),
+            "case": visible_cases_qs(request.profile),
+            "opportunity": visible_deals_qs(request.profile, request.user),
+            "lead": visible_leads_qs(request.profile, request.user),
+            "invoice": visible_invoices_qs(request.profile, request.user),
+        }.items():
+            comments = comments.exclude(
+                Q(content_type__model=model) & ~Q(object_id__in=visible.values("pk"))
+            )
+        context["comments"] = CommentSerializer(
+            comments, many=True, context={"request": request}
+        ).data
         context["countries"] = COUNTRIES
         return Response(
             {"error": False, "data": context},

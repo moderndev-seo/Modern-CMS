@@ -42,7 +42,13 @@ _DENIED = "You do not have Permission to perform this action"
 
 def visible_tasks_qs(profile):
     """Tasks ``profile`` is allowed to open, the queryset form of `access`."""
-    qs = Task.objects.filter(org=profile.org)
+    from contacts.access import visible_contacts_qs
+    from contacts.models import Contact
+
+    hidden = Contact.objects.filter(org=profile.org, patient__isnull=False).exclude(
+        pk__in=visible_contacts_qs(profile).values("pk")
+    )
+    qs = Task.objects.filter(org=profile.org).exclude(contacts__in=hidden)
     if is_org_admin(profile):
         return qs
     return qs.filter(Q(created_by=profile.user) | Q(assigned_to=profile)).distinct()
@@ -67,6 +73,14 @@ def get_task_or_404(profile, pk):
 
 def has_task_access(profile, task):
     """Non-raising form of `access`, for deciding what to put in a response."""
+    from contacts.access import visible_contacts_qs
+
+    if (
+        task.contacts.filter(patient__isnull=False)
+        .exclude(pk__in=visible_contacts_qs(profile).values("pk"))
+        .exists()
+    ):
+        return False
     if is_org_admin(profile):
         return True
     if profile.user_id == task.created_by_id:
@@ -82,6 +96,8 @@ def assert_task_access(profile, task):
 
 def has_task_delete_access(profile, task):
     """Non-raising form of `delete`."""
+    if not has_task_access(profile, task):
+        return False
     if is_org_admin(profile):
         return True
     return profile.user_id == task.created_by_id

@@ -80,7 +80,7 @@
         description: `${entry.reference} · ${entry.reason}`,
         amount: null
       })),
-      ...patient.receipts.map((receipt) => ({
+      ...(patient.receipts || []).map((receipt) => ({
         ...receipt,
         title: receipt.excluded
           ? 'Excluded duplicate payment'
@@ -95,7 +95,7 @@
   let completed = $derived(
     new Set(patient.events.filter((event) => !event.superseded).map((event) => event.kind))
   );
-  let payments = $derived(refundablePayments(patient.receipts));
+  let payments = $derived(refundablePayments(patient.receipts || []));
   let refundable = $derived(payments.some((payment) => payment.remaining > 0));
 </script>
 
@@ -123,7 +123,9 @@
       </p>
     </div>
     <div class="mp-collected">
-      <span>Net collected · USD</span><strong>{usd(patient.net_revenue)}</strong>
+      <span>Net collected · USD</span><strong
+        >{patient.can_read_finance ? usd(patient.net_revenue) : 'Restricted'}</strong
+      >
     </div>
   </header>
   {#if data.org.name.startsWith('TEST -')}<p class="mp-demo">
@@ -139,10 +141,13 @@
           (key === 'paid' ? payments.length > 0 : completed.has(key))}
       >
         <span
-          >{key === 'lead' || (key === 'paid' ? payments.length > 0 : completed.has(key))
-            ? '✓'
-            : '○'}</span
-        >{label}
+          >{key === 'paid' && !patient.can_read_finance
+            ? '—'
+            : key === 'lead' || (key === 'paid' ? payments.length > 0 : completed.has(key))
+              ? '✓'
+              : '○'}</span
+        >{label}{#if key === 'paid' && !patient.can_read_finance}
+          · Restricted{/if}
       </li>{/each}
   </ol>
   <div class="mp-columns">
@@ -276,47 +281,52 @@
       </section>
       <section class="mp-panel">
         <div class="mp-panel-heading"><h2>Record a milestone</h2></div>
-        <form class="mp-form" method="POST" action="?/event">
-          <label
-            >Event<select name="kind" bind:value={eventKind}
-              >{#each eventKinds as [key, label] (key)}<option value={key}>{label}</option
-                >{/each}</select
-            ></label
-          ><label
-            >Occurred at · UTC<input
-              name="occurred_at"
-              type="datetime-local"
-              required
-              value={eventValues?.occurred_at || nowInput()}
-            /></label
-          >{#if eventKind === 'touch'}<label
-              >Source<select name="source" value={eventValues?.source || 'unknown'}
-                ><option value="unknown">Unknown</option
-                >{#each sources.filter(([key]) => key !== 'unknown') as [key, label] (key)}<option
-                    value={key}>{label}</option
+        {#if patient.can_record_outcomes}<form class="mp-form" method="POST" action="?/event">
+            <label
+              >Event<select name="kind" bind:value={eventKind}
+                >{#each eventKinds as [key, label] (key)}<option value={key}>{label}</option
                   >{/each}</select
               ></label
             ><label
-              >Campaign<input
-                name="campaign"
-                maxlength="255"
-                value={eventValues?.campaign || ''}
+              >Occurred at · UTC<input
+                name="occurred_at"
+                type="datetime-local"
+                required
+                value={eventValues?.occurred_at || nowInput()}
               /></label
-            ><label
-              >Landing page<input
-                name="landing_page"
-                type="url"
-                maxlength="1000"
-                value={eventValues?.landing_page || ''}
-              /></label
-            >
-            <p class="mp-muted">
-              This is a subsequent touch. Original attribution stays unchanged.
-            </p>{/if}<label
-            >Notes<textarea name="notes" maxlength="2000" rows="2" value={eventValues?.notes || ''}
-            ></textarea></label
-          ><button class="mp-button">Record event</button>
-        </form>
+            >{#if eventKind === 'touch'}<label
+                >Source<select name="source" value={eventValues?.source || 'unknown'}
+                  ><option value="unknown">Unknown</option
+                  >{#each sources.filter(([key]) => key !== 'unknown') as [key, label] (key)}<option
+                      value={key}>{label}</option
+                    >{/each}</select
+                ></label
+              ><label
+                >Campaign<input
+                  name="campaign"
+                  maxlength="255"
+                  value={eventValues?.campaign || ''}
+                /></label
+              ><label
+                >Landing page<input
+                  name="landing_page"
+                  type="url"
+                  maxlength="1000"
+                  value={eventValues?.landing_page || ''}
+                /></label
+              >
+              <p class="mp-muted">
+                This is a subsequent touch. Original attribution stays unchanged.
+              </p>{/if}<label
+              >Notes<textarea
+                name="notes"
+                maxlength="2000"
+                rows="2"
+                value={eventValues?.notes || ''}></textarea></label
+            ><button class="mp-button">Record event</button>
+          </form>{:else}<p class="mp-form mp-muted">
+            Outcome recording permission is required.
+          </p>{/if}
       </section>
       <section class="mp-panel">
         <div class="mp-panel-heading">

@@ -1,5 +1,7 @@
 # Team installation and development
 
+For AI/developer continuity, begin with root `AGENTS.md` and [PROJECT_STATE.md](PROJECT_STATE.md). Review [release readiness](release-readiness.md) and [permission administration](patient-permissions.md) before adopting the remediation branch. Local installation is not production approval.
+
 ## Prerequisites and first run
 
 Install Git, Python 3 and Docker Desktop with Compose v2. Start Docker Desktop. Keep ports 5181, 8000, 5432 and 6379 available. This Compose stack is for local development; do not expose it to the Internet. It uses a documented development database role/password and does not configure production TLS or backups.
@@ -166,3 +168,28 @@ Migration `patients.0016_attribution_intake` adds three protected evidence table
 ## Website capture developer demo
 
 Open http://localhost:5181/modern-practice/website-demo.html. This fictional in-memory demo needs no login, creates no CRM records and makes no data requests. Try consent → Google Ads introduction → later email, then withdrawal and an Unknown-first visit. Read [website capture setup and limits](website-intake.md) before adapting it to a site. Run `node --test scripts/test_website_attribution.mjs` from the repository root with Node 20+. Restricted credentials and protected website-to-CRM submission remain pending; never put an administrator JWT on a website.
+
+
+## Post-audit authorization and CI validation
+
+Read [patient permissions](patient-permissions.md) before adopting the remediation. Regular members need explicit patient capabilities plus existing contact sharing. Migration `common.0044` defaults these capabilities off; `patients.0017` adds the 21 missing organization/creation indexes. No patient or cash records are rewritten. Review the migration diff and use the normal restricted application role after approval. This separate remediation checkout has not been installed into the running demo.
+
+In a backend development environment with dependencies installed:
+
+```bash
+# From backend/; SQLite compatibility is not tenant-security evidence.
+DJANGO_SETTINGS_MODULE=crm.test_settings uv run pytest -m "not postgres_only"
+# PostgreSQL connection variables must point to a disposable test server.
+# DBUSER must be LOGIN CREATEDB NOSUPERUSER NOBYPASSRLS for test-db creation.
+DJANGO_SETTINGS_MODULE=crm.test_settings_postgres uv run pytest --migrations --no-cov -m postgres_only
+uv run python ../scripts/check_test_routing.py
+uv run python manage.py makemigrations --check --dry-run
+uv run ruff check .
+uv run ruff format --check .
+uv sync --frozen --group docs
+uv run mkdocs build --strict -f ../mkdocs.yml -d site
+```
+
+Set a local test-only SECRET_KEY of at least 32 characters. Never point a test runner at production. The security fixture rejects SQLite, superusers and BYPASSRLS roles. CI gives the security job its own PostgreSQL service and no `needs` dependency on other test jobs. The compatibility PostgreSQL job remains a type/constraint check as a superuser and is explicitly **not** evidence of isolation. The routing script proves the two selections are disjoint and cover all collected tests; all patient tests, including future files, go to the policy-bound job. Run focused patient tests with PostgreSQL settings as well. Existing patient staff fixtures explicitly grant capabilities; production migrations do not.
+
+Recommended branch protection (owner approval required): protect `main`, require PR review and current successful checks for `backend-tests`, `backend-tests-postgres`, `patient-security-postgres`, `package-build`, `frontend-checks`, `docs-build` and the actual configured CodeQL analysis check. Prevent force pushes/deletion and prefer resolving review conversations before merge. Check the exact GitHub check names from a real run before configuring them. No branch-protection settings were changed. Badge commits directly to main were removed from CI so that validation does not bypass review. All pushes/PRs to main now trigger CI without path filters, avoiding missing required checks on documentation-only changes.

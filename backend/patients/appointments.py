@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from common.permissions import is_org_admin
 from contacts.access import assert_contact_access
+from patients.access import require_outcomes
 from patients.models import Appointment, AppointmentChange, JourneyEvent, Patient
 from patients.serializers import StrictSerializer
 from patients.views import PracticeView
@@ -175,6 +176,7 @@ class AppointmentList(PracticeView):
         )
 
     def post(self, request, pk):
+        require_outcomes(request.profile)
         patient = self.patient(request, pk)
         assert_contact_access(request.profile, patient.contact)
         serializer = AppointmentSerializer(data=request.data)
@@ -245,6 +247,7 @@ class AppointmentDetail(PracticeView):
         return Response(data)
 
     def patch(self, request, pk, appointment_pk):
+        require_outcomes(request.profile)
         patient = self.patient(request, pk)
         assert_contact_access(request.profile, patient.contact)
         serializer = ChangeSerializer(data=request.data)

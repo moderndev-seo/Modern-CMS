@@ -8,6 +8,7 @@ from common.lookups import get_scoped_or_404
 from common.models import Attachments, Comment
 from common.permissions import HasOrgContext, is_org_admin
 from common.serializer import CommentSerializer
+from contacts.access import assert_generic_patient_access
 from opportunity import swagger_params
 from opportunity.serializer import OpportunityCommentEditSwaggerSerializer
 
@@ -36,6 +37,7 @@ class OpportunityCommentView(APIView):
     def put(self, request, pk, format=None):
         params = request.data
         obj = self.get_object(pk)
+        assert_generic_patient_access(request.profile, obj)
         if (
             is_org_admin(request.profile)
             or request.user.is_superuser
@@ -84,6 +86,7 @@ class OpportunityCommentView(APIView):
         """Handle partial updates to a comment."""
         params = request.data
         obj = self.get_object(pk)
+        assert_generic_patient_access(request.profile, obj)
         if (
             is_org_admin(request.profile)
             or request.user.is_superuser
@@ -123,6 +126,7 @@ class OpportunityCommentView(APIView):
     )
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
+        assert_generic_patient_access(request.profile, self.object)
         if (
             is_org_admin(request.profile)
             or request.user.is_superuser
@@ -175,6 +179,7 @@ class OpportunityAttachmentView(APIView):
         # Repairing the lookup without repairing the comparison would have left
         # the fix looking complete while the branch stayed unreachable.
         self.object = get_scoped_or_404(self.model, pk, request.profile.org)
+        assert_generic_patient_access(request.profile, self.object)
         if (
             is_org_admin(request.profile)
             or request.user.is_superuser

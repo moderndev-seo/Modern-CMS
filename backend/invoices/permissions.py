@@ -50,6 +50,18 @@ def has_object_access(request, obj):
     and turned the non-admin estimate list into a 500.
     """
     profile = request.profile
+    if obj.contact_id and hasattr(obj.contact, "patient"):
+        from contacts.access import has_contact_access
+        from patients.access import can_read_finance
+
+        if not can_read_finance(profile) or not has_contact_access(
+            profile, obj.contact
+        ):
+            return False
+        if request.method not in ("GET", "HEAD", "OPTIONS") and not is_org_admin(
+            profile
+        ):
+            return False
 
     if is_org_admin(profile) or request.user.is_superuser:
         return True
@@ -62,7 +74,7 @@ def has_object_access(request, obj):
 
 def visible_invoices_qs(profile, user):
     """Invoices ``profile`` may open, the queryset form of `has_object_access`."""
-    qs = Invoice.objects.filter(org=profile.org)
+    qs = patient_finance_queryset(Invoice.objects.filter(org=profile.org), profile)
     if is_org_admin(profile) or user.is_superuser:
         return qs
     return qs.filter(Q(created_by=profile.user) | Q(assigned_to=profile)).distinct()
@@ -129,4 +141,16 @@ def get_recurring_or_error(request, recurring_id, queryset=None):
     """
     return _get_or_error(
         request, RecurringInvoice, recurring_id, RECURRING_NOT_FOUND, queryset
+    )
+
+
+def patient_finance_queryset(queryset, profile):
+    """Restrict only patient-linked documents; preserve legacy CRM rules."""
+    from contacts.access import visible_contacts_qs
+    from patients.access import can_read_finance
+
+    if not can_read_finance(profile):
+        return queryset.filter(contact__patient__isnull=True)
+    return queryset.filter(
+        Q(contact__patient__isnull=True) | Q(contact__in=visible_contacts_qs(profile))
     )

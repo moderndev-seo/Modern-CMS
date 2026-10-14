@@ -74,7 +74,11 @@ from common.utils import (
     validate_attachment,
 )
 from common.validators import date_param, payload_id_list, uuid_list_param
-from contacts.access import replace_visible_contacts, visible_contacts_qs
+from contacts.access import (
+    assert_generic_patient_access,
+    replace_visible_contacts,
+    visible_contacts_qs,
+)
 from contacts.models import Contact
 from contacts.serializer import ContactSerializer
 from invoices.models import UNPAID_STATUSES, Invoice
@@ -741,12 +745,14 @@ class AccountDetailView(APIView):
                         id__in=visible_contacts_qs(profile).values("id")
                     ),
                     many=True,
+                    context={"request": self.request},
                 ).data,
                 "opportunity_list": OpportunitySerializer(
                     visible_deals_qs(profile, request.user).filter(
                         account=self.account
                     ),
                     many=True,
+                    context={"request": self.request},
                 ).data,
                 "users": ProfileSerializer(
                     Profile.objects.filter(
@@ -772,7 +778,9 @@ class AccountDetailView(APIView):
                 "case_status": STATUS_CHOICE,
                 "comment_permission": comment_permission,
                 "tasks": TaskSerializer(
-                    visible_tasks_qs(profile).filter(account=self.account), many=True
+                    visible_tasks_qs(profile).filter(account=self.account),
+                    many=True,
+                    context={"request": self.request},
                 ).data,
                 "invoices": InvoiceListSerializer(
                     visible_invoices_qs(profile, request.user).filter(
@@ -975,6 +983,7 @@ class AccountCommentView(APIView):
     def put(self, request, pk, format=None):
         data = request.data
         obj = self.get_object(pk)
+        assert_generic_patient_access(request.profile, obj)
         if is_org_admin(request.profile) or request.profile == obj.commented_by:
             # No `if data.get("comment")` guard here: a body with a blank or
             # absent `comment` used to fall out of this branch and hit the 403
@@ -1013,6 +1022,7 @@ class AccountCommentView(APIView):
         """Handle partial updates to a comment."""
         data = request.data
         obj = self.get_object(pk)
+        assert_generic_patient_access(request.profile, obj)
         if is_org_admin(request.profile) or request.profile == obj.commented_by:
             serializer = CommentSerializer(obj, data=data, partial=True)
             if serializer.is_valid():
@@ -1036,6 +1046,7 @@ class AccountCommentView(APIView):
     @extend_schema(tags=["Accounts"], parameters=swagger_params.organization_params)
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
+        assert_generic_patient_access(request.profile, self.object)
         if is_org_admin(request.profile) or request.profile == self.object.commented_by:
             self.object.delete()
             return Response(
@@ -1074,6 +1085,7 @@ class AccountAttachmentView(APIView):
             )
         except (DjangoValidationError, ValueError):
             raise Http404("No such attachment.")
+        assert_generic_patient_access(request.profile, self.object)
         if (
             is_org_admin(request.profile)
             or request.profile.user_id == self.object.created_by_id

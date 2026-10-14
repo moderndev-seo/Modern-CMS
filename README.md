@@ -2,6 +2,12 @@
 
 A practice operations and marketing attribution CRM built on [BottleCRM / Django-CRM](https://github.com/django-crm/Django-CRM). Django REST Framework, SvelteKit, PostgreSQL row-level security, Redis, and Celery power the local development stack. The upstream MIT license and notices are retained in [LICENSE](LICENSE).
 
+## Product vision and development handoff
+
+Modern Practice is intended to support agency teams and multiple healthcare practices/locations across websites, organic SEO, Google Business Profile, Google Ads, GA4, Search Console, calls and leads, scheduling, verified patient identity and collected-revenue attribution. The implemented workflows below are primarily local/manual or sandbox-only. Live marketing, call, booking and payment connectors, location-level agency permissions and production operations are unfinished.
+
+New developers and AI agents should start with [AGENTS.md](AGENTS.md), then [PROJECT_STATE.md](docs/modern-practice/PROJECT_STATE.md). That handoff records current authorization, verified tests, limitations and the proposed next milestone. See [release readiness](docs/modern-practice/release-readiness.md) and the [architecture roadmap](docs/modern-practice/post-audit-architecture.md) before changing permissions or integrations. The remediation is a review branch, not a production release; do not merge or deploy automatically.
+
 ## Start here
 
 Requires Git, Python 3, and Docker Desktop with Docker Compose v2 running. No advertising, email delivery, or payment-service account is needed for the demo.
@@ -62,6 +68,10 @@ The rerunnable seed creates two fictional practices. For **September 1–30, 202
 Milestone 3 essential workflows are implemented; [team acceptance](docs/modern-practice/milestone-three-acceptance.md) remains pending. Complex/refunded duplicates, duplicate refunds, many-to-many legacy matching, issued credit-note documents/legacy invoice exports, provider/room availability, timezone configuration, calendar connections and reminders remain deferred. The new internal statement/CSV includes internal credits but does not alter legacy invoice documents. Milestone 4 has a local-only Messages workflow; Milestone 5 now has local review tracking. Connected invitations, provider synchronization and public replies remain unavailable. No live advertising, messaging, review or payment integrations have been connected. Production deployment and healthcare compliance review are separate work.
 
 [Milestone 1](docs/modern-practice/milestone-one.md) · [Milestone 2](docs/modern-practice/milestone-two.md) · [Milestone 3](docs/modern-practice/milestone-three.md) · [Milestone 4](docs/modern-practice/milestone-four.md) · [Milestone 5](docs/modern-practice/milestone-five.md)
+
+## Patient authorization and validation
+
+The post-audit remediation introduces explicit practice patient/outcome/financial capabilities and scoped-token restrictions. Review [patient permissions](docs/modern-practice/patient-permissions.md) before granting staff access. See the [final release review](docs/modern-practice/release-readiness.md), [remediation status](docs/modern-practice/post-audit-remediation.md) and the [proposed architecture](docs/modern-practice/post-audit-architecture.md); future architecture and live integrations are not implemented by this repair.
 
 ## Working as a team
 

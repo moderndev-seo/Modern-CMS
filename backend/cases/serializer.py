@@ -54,7 +54,7 @@ def parent_access_context(profile, cases):
             .filter(id__in=parent_ids)
             .values_list("id", flat=True)
         )
-    return {"readable_parent_ids": readable}
+    return {"readable_parent_ids": readable, "profile": profile}
 
 
 class CaseSerializer(serializers.ModelSerializer):

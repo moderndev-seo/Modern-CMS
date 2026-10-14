@@ -68,6 +68,18 @@ class PatientSerializer(StrictSerializer):
             self.context["request"].profile
         )
 
+    def to_representation(self, instance):
+        from rest_framework.exceptions import PermissionDenied
+
+        from contacts.access import assert_contact_access
+        from patients.access import can_access_patients
+
+        profile = self.context["request"].profile
+        if instance.org_id != profile.org_id or not can_access_patients(profile):
+            raise PermissionDenied("Patient access is required.")
+        assert_contact_access(profile, instance.contact)
+        return super().to_representation(instance)
+
     def get_name(self, obj):
         return f"{obj.contact.first_name} {obj.contact.last_name}".strip()
 
