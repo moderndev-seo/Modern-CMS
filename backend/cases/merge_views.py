@@ -18,7 +18,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from cases.access import assert_case_read_access, get_case_or_404, visible_cases_qs
+from cases.access import (
+    assert_case_read_access,
+    get_case_or_404,
+    visible_cases_qs,
+    writable_cases_qs,
+)
 from cases.models import Case, EmailMessage
 from cases.notifications import case_link
 from cases.serializer import CaseSerializer, parent_access_context
@@ -34,7 +39,15 @@ def can_merge_case(profile, case: Case) -> bool:
     detail payload can say whether to offer "Merge into..." and the target
     picker can list only tickets the merge will accept.
     """
-    return is_org_admin(profile) or case.created_by_id == profile.user_id
+    return mergeable_cases_qs(profile).filter(pk=case.pk).exists()
+
+
+def mergeable_cases_qs(profile):
+    """Current merge authority, batched for detail summaries of many sources."""
+    queryset = writable_cases_qs(profile)
+    if not is_org_admin(profile):
+        queryset = queryset.filter(created_by=profile.user)
+    return queryset
 
 
 def _can_merge(profile, source: Case, target: Case) -> bool:

@@ -13,6 +13,7 @@ from common.models import APISettings, Attachments, Comment
 from common.permissions import HasOrgContext, is_org_admin
 from common.request_meta import client_ip, referer
 from common.serializer import LeadCommentSerializer
+from contacts.access import assert_generic_patient_access
 from contacts.models import Contact
 from leads import swagger_params
 from leads.serializer import (
@@ -51,12 +52,15 @@ class LeadCommentView(APIView):
     def put(self, request, pk, format=None):
         params = request.data
         obj = self.get_object(pk)
+        assert_generic_patient_access(request.profile, obj)
         if (
             is_org_admin(request.profile)
             or request.user.is_superuser
             or request.profile == obj.commented_by
         ):
-            serializer = LeadCommentSerializer(obj, data=params)
+            serializer = LeadCommentSerializer(
+                obj, data=params, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(
@@ -94,12 +98,15 @@ class LeadCommentView(APIView):
         """Handle partial updates to a comment."""
         params = request.data
         obj = self.get_object(pk)
+        assert_generic_patient_access(request.profile, obj)
         if (
             is_org_admin(request.profile)
             or request.user.is_superuser
             or request.profile == obj.commented_by
         ):
-            serializer = LeadCommentSerializer(obj, data=params, partial=True)
+            serializer = LeadCommentSerializer(
+                obj, data=params, partial=True, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(
@@ -133,6 +140,7 @@ class LeadCommentView(APIView):
     )
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
+        assert_generic_patient_access(request.profile, self.object)
         if (
             is_org_admin(request.profile)
             or request.user.is_superuser
@@ -177,6 +185,7 @@ class LeadAttachmentView(APIView):
         # comment view above already scopes its lookup, as do the accounts,
         # contacts, cases, tasks, tags and teams equivalents.
         self.object = get_scoped_or_404(self.model, pk, request.profile.org)
+        assert_generic_patient_access(request.profile, self.object)
         if (
             is_org_admin(request.profile)
             or request.user.is_superuser

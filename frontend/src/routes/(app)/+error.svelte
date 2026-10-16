@@ -40,6 +40,8 @@
   );
 </script>
 
+<svelte:head><title>{status} | Modern Practice CRM</title></svelte:head>
+
 <div class="v2-scroll">
   <EmptyState title={shape.title} body={shape.body}>
     {#snippet icon()}

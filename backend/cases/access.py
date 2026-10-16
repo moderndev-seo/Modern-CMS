@@ -38,6 +38,7 @@ from cases.models import Case
 # nothing about cases needs to be imported; this name stays so those four
 # imports keep working and so the cases access rules still read in one place.
 from common.permissions import is_org_admin  # noqa: F401
+from contacts.access import has_patient_link_access, patient_link_queryset
 
 _DENIED = "You do not have Permission to perform this action"
 
@@ -48,7 +49,7 @@ def visible_cases_qs(profile):
     The watcher clause is what lets somebody keep following a ticket after
     they are unassigned, and it is the clause the detail view was missing.
     """
-    qs = Case.objects.filter(org=profile.org)
+    qs = patient_link_queryset(Case.objects.filter(org=profile.org), profile)
     if is_org_admin(profile):
         return qs
     return qs.filter(
@@ -63,7 +64,7 @@ def writable_cases_qs(profile):
     action on each row: a watcher can open the ticket but is refused the reply,
     so offering them one is a button that answers 403.
     """
-    qs = Case.objects.filter(org=profile.org)
+    qs = patient_link_queryset(Case.objects.filter(org=profile.org), profile)
     if is_org_admin(profile):
         return qs
     return qs.filter(Q(created_by=profile.user) | Q(assigned_to=profile)).distinct()
@@ -88,6 +89,8 @@ def get_case_or_404(profile, pk):
 
 def has_case_read_access(profile, case):
     """Non-raising form of `read`, for computing response flags."""
+    if not has_patient_link_access(profile, case):
+        return False
     if has_case_write_access(profile, case):
         return True
     return case.watchers.filter(id=profile.id).exists()
@@ -95,6 +98,8 @@ def has_case_read_access(profile, case):
 
 def has_case_write_access(profile, case):
     """Non-raising form of `write`."""
+    if not has_patient_link_access(profile, case):
+        return False
     if is_org_admin(profile):
         return True
     if profile.user_id == case.created_by_id:
@@ -121,8 +126,12 @@ def assert_case_delete_access(profile, case):
     handed to, which is a reason to let them work the ticket and not a reason
     to let them erase it.
     """
-    if is_org_admin(profile):
-        return
-    if profile.user_id == case.created_by_id:
-        return
-    raise PermissionDenied(_DENIED)
+    if not has_case_delete_access(profile, case):
+        raise PermissionDenied(_DENIED)
+
+
+def has_case_delete_access(profile, case):
+    """The individual and bulk delete rule, including current patient access."""
+    return has_patient_link_access(profile, case) and (
+        is_org_admin(profile) or profile.user_id == case.created_by_id
+    )

@@ -52,7 +52,10 @@ class JourneyEvent(BaseOrgModel):
 
     class Meta:
         db_table = "mp_journey_event"
-        indexes = [models.Index(fields=["org", "patient", "occurred_at"])]
+        indexes = [
+            models.Index(fields=["org", "-created_at"]),
+            models.Index(fields=["org", "patient", "occurred_at"]),
+        ]
 
 
 class Receipt(BaseOrgModel):
@@ -73,7 +76,10 @@ class Receipt(BaseOrgModel):
 
     class Meta:
         db_table = "mp_receipt"
-        indexes = [models.Index(fields=["org", "occurred_at"])]
+        indexes = [
+            models.Index(fields=["org", "-created_at"]),
+            models.Index(fields=["org", "occurred_at"]),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(amount__gt=0), name="mp_receipt_positive"
@@ -98,7 +104,10 @@ class MarketingSpend(BaseOrgModel):
 
     class Meta:
         db_table = "mp_marketing_spend"
-        indexes = [models.Index(fields=["org", "date"])]
+        indexes = [
+            models.Index(fields=["org", "-created_at"]),
+            models.Index(fields=["org", "date"]),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["org", "source", "date"], name="mp_daily_spend"
@@ -127,7 +136,10 @@ class Appointment(BaseOrgModel):
 
     class Meta:
         db_table = "mp_appointment"
-        indexes = [models.Index(fields=["org", "patient", "starts_at"])]
+        indexes = [
+            models.Index(fields=["org", "-created_at"]),
+            models.Index(fields=["org", "patient", "starts_at"]),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["org", "request_id"], name="mp_appointment_request"
@@ -160,7 +172,10 @@ class AppointmentChange(BaseOrgModel):
     class Meta:
         db_table = "mp_appointment_change"
         ordering = ["created_at", "id"]
-        indexes = [models.Index(fields=["org", "appointment", "created_at"])]
+        indexes = [
+            models.Index(fields=["org", "-created_at"]),
+            models.Index(fields=["org", "appointment", "created_at"]),
+        ]
 
 
 class PaymentMatch(BaseOrgModel):
@@ -177,6 +192,7 @@ class PaymentMatch(BaseOrgModel):
     active = models.BooleanField(default=True, editable=False)
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         constraints = [
             models.UniqueConstraint(
                 fields=["receipt"],
@@ -202,6 +218,7 @@ class PaymentMatchReversal(BaseOrgModel):
     reason = models.CharField(max_length=1000)
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_payment_match_reversal"
         ordering = ["created_at", "id"]
 
@@ -224,6 +241,7 @@ class InvoiceCreditAdjustment(BaseOrgModel):
     )
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_invoice_credit"
         ordering = ["created_at", "id"]
         constraints = [
@@ -249,6 +267,7 @@ class ReceiptAllocation(BaseOrgModel):
     snapshot = models.JSONField(default=dict)
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_receipt_allocation"
         constraints = [
             models.UniqueConstraint(
@@ -278,6 +297,7 @@ class ReceiptCorrection(BaseOrgModel):
     snapshot = models.JSONField(default=dict)
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_receipt_correction"
         ordering = ["created_at", "id"]
         constraints = [
@@ -318,6 +338,7 @@ class ReceiptExclusion(BaseOrgModel):
     snapshot = models.JSONField(default=dict)
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_receipt_exclusion"
         ordering = ["created_at", "id"]
         constraints = [
@@ -348,6 +369,7 @@ class ReceiptReference(BaseOrgModel):
     reference = models.CharField(max_length=100)
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_cash_reference_reservation"
         constraints = [
             models.UniqueConstraint(
@@ -374,6 +396,7 @@ class LocalConversation(BaseOrgModel):
     revision = models.PositiveIntegerField(default=0)
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_local_conversation"
         constraints = [
             models.UniqueConstraint(
@@ -397,6 +420,7 @@ class LocalMessage(BaseOrgModel):
     request_id = models.UUIDField()
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_local_message"
         constraints = [
             models.UniqueConstraint(
@@ -417,6 +441,7 @@ class ConversationChange(BaseOrgModel):
     request_id = models.UUIDField()
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_conversation_change"
         constraints = [
             models.UniqueConstraint(
@@ -436,6 +461,7 @@ class LocalMessageTemplate(BaseOrgModel):
     request_id = models.UUIDField()
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_local_message_template"
         constraints = [
             models.UniqueConstraint(
@@ -471,6 +497,7 @@ class PracticeReview(BaseOrgModel):
     revision = models.PositiveIntegerField(default=0)
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_practice_review"
         constraints = [
             models.UniqueConstraint(
@@ -498,6 +525,7 @@ class ReviewChange(BaseOrgModel):
     request_id = models.UUIDField()
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_review_change"
         constraints = [
             models.UniqueConstraint(
@@ -516,6 +544,7 @@ class AttributionConnection(BaseOrgModel):
     request_id = models.UUIDField()
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_attribution_connection"
         constraints = [
             models.UniqueConstraint(
@@ -530,6 +559,7 @@ class AttributionIdentity(BaseOrgModel):
     patient = models.ForeignKey(Patient, on_delete=models.PROTECT)
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_attribution_identity"
         constraints = [
             models.UniqueConstraint(
@@ -553,6 +583,7 @@ class AttributionEvent(BaseOrgModel):
     )
 
     class Meta:
+        indexes = [models.Index(fields=["org", "-created_at"])]
         db_table = "mp_attribution_event"
         constraints = [
             models.UniqueConstraint(

@@ -13,7 +13,14 @@ from django.conf import settings
 
 REPO_ROOT = Path(settings.BASE_DIR).parent
 SETTINGS_PATH = Path(settings.BASE_DIR) / "crm" / "settings.py"
-ENV_DOCKER_PATH = REPO_ROOT / ".env.docker"
+ENV_DOCKER_PATH = REPO_ROOT / ".env.docker.example"
+ADMIN_COMMAND_PATH = (
+    Path(settings.BASE_DIR)
+    / "common"
+    / "management"
+    / "commands"
+    / "create_default_admin.py"
+)
 COMPOSE_PATH = REPO_ROOT / "docker-compose.yml"
 REFERENCE_PATH = REPO_ROOT / "docs" / "reference" / "environment-variables.md"
 
@@ -71,6 +78,7 @@ def test_no_documented_variable_is_read_nowhere():
     documented = _documented_variables(REFERENCE_PATH.read_text())
     known = (
         _variables_read_by_settings(SETTINGS_PATH.read_text())
+        | _variables_read_by_settings(ADMIN_COMMAND_PATH.read_text())
         | _variables_in_env_files()
     )
     invented = sorted(documented - known)
@@ -94,4 +102,10 @@ def test_every_variable_settings_reads_is_documented():
         + "\n  ".join(missing)
         + "\n\nAdd a row to docs/reference/environment-variables.md, or add the "
         "name to UNDOCUMENTED_BY_DESIGN with a comment saying why."
+    )
+
+
+def test_admin_password_is_read_by_the_bootstrap_command():
+    assert "ADMIN_PASSWORD" in _variables_read_by_settings(
+        ADMIN_COMMAND_PATH.read_text()
     )

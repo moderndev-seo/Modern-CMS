@@ -315,6 +315,13 @@ class CommentContactSerializer(serializers.ModelSerializer):
     away and does not belong inline in a comment.
     """
 
+    def to_representation(self, instance):
+        from contacts.access import may_serialize_contact
+
+        if not may_serialize_contact(instance, self.context):
+            return {"restricted": True}
+        return super().to_representation(instance)
+
     name = serializers.SerializerMethodField()
 
     class Meta:
@@ -592,6 +599,9 @@ class ShowOrganizationListSerializer(serializers.ModelSerializer):
             "alternate_phone",
             "has_sales_access",
             "has_marketing_access",
+            "has_patient_access",
+            "can_record_patient_outcomes",
+            "has_patient_finance_access",
             "is_organization_admin",
             "org",
         )
@@ -675,6 +685,9 @@ class CreateProfileSerializer(serializers.ModelSerializer):
             "alternate_phone",
             "has_sales_access",
             "has_marketing_access",
+            "has_patient_access",
+            "can_record_patient_outcomes",
+            "has_patient_finance_access",
         )
 
     # The fields that grant access rather than describe a person. Only an admin
@@ -684,6 +697,9 @@ class CreateProfileSerializer(serializers.ModelSerializer):
         "role",
         "has_sales_access",
         "has_marketing_access",
+        "has_patient_access",
+        "can_record_patient_outcomes",
+        "has_patient_finance_access",
     )
 
     def __init__(self, *args, **kwargs):
@@ -775,6 +791,9 @@ class ProfileSerializer(serializers.ModelSerializer):
             "role",
             "address",
             "has_marketing_access",
+            "has_patient_access",
+            "can_record_patient_outcomes",
+            "has_patient_finance_access",
             "has_sales_access",
             "phone",
             "date_of_joining",
@@ -1177,6 +1196,9 @@ class ProfileDetailSerializer(serializers.ModelSerializer):
             "is_organization_admin",
             "has_sales_access",
             "has_marketing_access",
+            "has_patient_access",
+            "can_record_patient_outcomes",
+            "has_patient_finance_access",
             "phone",
             "date_of_joining",
             "is_active",

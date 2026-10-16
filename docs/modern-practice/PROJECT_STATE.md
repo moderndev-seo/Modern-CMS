@@ -1,4 +1,72 @@
+## PR #1 review corrections — October 16, 2026
+
+Objective: finish the four security-review findings and verified adjacent bypasses on existing `codex/patient-authorization-ci`, then stop for independent human review and separate owner merge approval. The owner's latest request explicitly authorizes targeted fixes, tests, commits/pushes and four review-thread replies. No merge, deployment, repository administration, saved database changes or Phase 2A is authorized.
+
+Implementation and final local verification are complete. See [the consolidated review report](pr1-review-remediation.md) for root causes, affected files, regression evidence, intermediate failures and limits. Corrections cover opportunity Kanban/line items, case watching/analytics/merge/unmerge/bulk deletion, member grants and trusted portal-author contexts. Verified adjacent goal reporting and opportunity notification disclosures are corrected. Merged-source permissions are batched without weakening current patient/Contact access. No new schema, attribution or receipt arithmetic changes.
+
+Final results: **281 restricted PostgreSQL security tests passed** (zero failures/skips; all 66 new regressions and 254 patient cases); **6,294 PostgreSQL compatibility tests passed**; **6,285 SQLite tests passed/nine expected JSON-filter skips**, 90.35% coverage. Routing accounts for all 6,575 cases. Ruff/825-file formatting, system/migration checks, frontend 822 tests/70 files, types (zero errors/warnings), lint (eight existing warnings), formatting, production build, strict docs and two publication guards passed. Security role has neither superuser nor BYPASSRLS privileges; 89 tables have forced RLS. Exact warning counts and failed/interrupted runs are recorded in the report; no assertions were relaxed.
+
+Delivery is on [PR #1](https://github.com/moderndev-seo/Modern-CMS/pull/1), targeting main. The corresponding PR review summary records the exact published SHA, thread replies and seven hosted checks. Read the current PR head/checks before continuing; do not reuse old-head CI as proof. Git CLI lacks credentials, so publication uses the connected API with exact tree comparison and a non-forced expected-head update. The original checkout/history and private architecture packages are preserved. Temporary dependencies are removed; no saved demo or production database was migrated. The original demo configuration still uses ports 5181/8000.
+
+Remaining gate: qualified independent human review and separate owner merge approval. Green automated checks are not independent approval. Preserve Architecture v0.2.0/A01–A10; Group B/C remain pending. After the security merge, the separate preserved 15-file architecture docs PR is next. Fictional Phase 2A may start only after the required security and documentation approvals/merges. No live integrations or production readiness claim.
+
+Historical snapshots below describe earlier states and do not override this current handoff.
+
 # Modern Practice CRM — project handoff
+
+## GitHub publication — October 14, 2026
+
+The verified remediation is published in [PR #1](https://github.com/moderndev-seo/Modern-CMS/pull/1), branch `codex/patient-authorization-ci`, targeting `main`. Implementation commit: `a84a50e4da981912e91e545cafb0d3f90a73580f`; public base remains `11e6d59a0ef79e6cefe6d5fe1a71859099557961`. The following handoff commit changes documentation only. The 57-file remediation tree matches the local reviewed snapshot exactly (`2a64cfd02db45644b9f28b94671475cdcff35f0d`).
+
+Git CLI publication lacked credentials; the connected GitHub API published the same tree using public history. The original local commit is preserved on `codex/remediation-local-snapshot` in the isolated clone. No remote URL was changed. The original development checkout was not modified during publication.
+
+Hosted [CI](https://github.com/moderndev-seo/Modern-CMS/actions/workflows/tests.yml) and [CodeQL](https://github.com/moderndev-seo/Modern-CMS/actions/workflows/codeql-analysis.yml) were triggered. Their final status must be checked against the latest PR head, not inferred from the accepted local baseline below; the publication report in the PR records the observed results. Required jobs: backend-tests, backend-tests-postgres, patient-security-postgres, frontend-checks, package-build, docs-build and Analyze (python). Security must use migrated PostgreSQL with NOSUPERUSER/NOBYPASSRLS and execute all patient/tenant security tests independently of compatibility failures.
+
+Independent review remains a merge gate: no CODEOWNERS file or qualified named reviewer was available, and the connected tool cannot enumerate repository collaborators. The owner must identify a reviewer with authorization/RLS/migration expertise; no self-review counts as approval. Do not merge, deploy, change repository settings or start the next milestone. No production or saved application database was changed; private decks/reference/output, secrets and logs are excluded.
+
+## Current authorization and AI entrypoint — October 14, 2026
+
+The owner accepted the final local review and authorized committing the verified remediation, publishing only `codex/patient-authorization-ci` to `moderndev-seo/Modern-CMS`, opening a PR to `main`, and investigating hosted checks within this scope. No merge, deployment, production database changes, repository administration changes or next-phase implementation is authorized. This section supersedes the historical publication restrictions below.
+
+For a new Codex/Cursor session: read root `AGENTS.md`, this file, [team setup](team-setup.md), [permissions](patient-permissions.md), [release review](release-readiness.md), and [architecture roadmap](post-audit-architecture.md). Inspect the current branch/status and the GitHub PR/checks before editing. Use a fresh public-repository clone; never publish the original development repository's history or private output. The README explains installation; local PostgreSQL must use a non-superuser, non-BYPASSRLS application role. Preserve forced RLS, attribution and the immutable cash evidence model.
+
+### Full product vision and actual implementation
+
+The long-term product serves an agency's internal team and multiple healthcare practices and locations: client/site management, website operations, organic SEO, Google Business Profile, Google Ads, GA4, Search Console, lead generation and calls, scheduling, patient verification, and attribution through collected revenue. These are product goals, not claims of completed connectors or a complete agency operating system.
+
+Implemented: practice-scoped patient journeys, original/source and later-touch records, appointment workflows, manual receipts/refunds and reconciliation, Growth/ROAS with explicit Unknown/unavailable values, local Messages/Reviews, TEST-only synchronous attribution intake, and consent-controlled local website capture. The security remediation adds explicit patient/outcome/finance capabilities and credential restrictions across shared CRM routes. Location-level grants, automated Google reporting, website publishing/SEO management, phone/vendor booking/payment synchronization, verified new-patient identity, durable service ingestion and production operations remain proposed or unfinished. See the roadmap for architectural reasons and sequencing; do not infer universal vendor compatibility.
+
+Next development candidate: **restricted, revocable service identity and durable protected website-event ingestion**, including tenant-bound credentials, validated schemas, idempotency, durable processing, retries/replay, unmatched events and audit evidence. This is approved for planning only; implementation requires remediation approval/merge and separate owner authorization.
+
+## Final local release review snapshot — October 14, 2026
+
+**Verdict: ready with documented nonblocking limitations for a reviewed PR decision.** Read the consolidated [release-readiness report](release-readiness.md) for findings, role matrix, exact validation results, migrations, proposed PR and production gates. The owner authorized local review only: no commit, push, merge, deployment, GitHub settings changes or next-phase implementation. All 57 modified/untracked files remain uncommitted on `codex/patient-authorization-ci`, HEAD `11e6d59a0ef79e6cefe6d5fe1a71859099557961`. Nothing is staged. The original 47 remediation files and private baseline snapshot are preserved.
+
+Review corrections restore authorized serializer context, restrict patient-linked bodies/history, enforce revocation across deletion and generic interaction mutations, and fix restricted payment status and stale error-page titles. No schema beyond the original two additive migrations was added.
+
+Final checks: PostgreSQL security **215 passed, zero skips**, 213 warnings; PostgreSQL compatibility **6,294 passed, zero skips**, 4,781 warnings; SQLite **6,285 passed, nine PostgreSQL-only JSON filter skips**, 4,772 warnings, **90.33% coverage**. Those nine cases passed in PostgreSQL. Routing accounts for all 6,509 cases, including every one of the 188 patient tests in security. Frontend **822 tests/70 files passed**, types zero errors/warnings, lint zero errors/eight existing warnings, full formatting and production Node build passed. Website adapter **14 passed**. Ruff/format (824 files), system check, drift, disposable setup, migration rehearsal (false defaults, preserved patient/source, 21 indexes and forced RLS), installed wheel startup/seven templates, strict docs/publication guards and workflow YAML passed. Complete evidence and intermediate failures are recorded in the report; hosted Actions/CodeQL were not run.
+
+Browser acceptance verified clinical consultation, admin API revocation and stale-form 403, finance-only receipt reads, 404, marketing-only Growth, administrator payment/refund reconciliation at fictional USD150 minus5 =145, and logout/redirect. Final fresh build confirmed Restricted payment status and neutral 403 title without prior patient identity/history. Earlier timeouts/startup and test-harness failures were recovered. Two frontend five-second import timeouts under contention were followed by an unchanged-test uncontended 822-pass run.
+
+The original saved demo remains at localhost5181/8000, untouched. Temporary review servers at loopback8001/5182/5183 are stopped after acceptance; those URLs are not the saved demo. Private logs/JUnit/scripts are outside this clone in original ignored `output/remediation/release-review/`. The temporary frontend dependency symlink is removed after checks. No saved database/volume was migrated or deleted.
+
+Next action: owner review of this diff/report and explicit publication approval, then hosted checks and independent review. Production still needs backup/restore, staff-grant, operational/privacy and human acceptance. Restricted service identity and durable website ingestion remain a proposal only; do not implement them during this review.
+
+## Historical owner override: post-audit remediation
+
+The October 13 post-audit request supersedes the previous automatic-push preference: **do not commit, push, merge, change remotes or repository settings without explicit approval**. Authorization and CI remediation is implemented in a fresh public-main checkout on `codex/patient-authorization-ci`, based on `11e6d59a0ef79e6cefe6d5fe1a71859099557961`. Authorized remediation and local validation are complete; see the measured results below. Do not treat this as production approval. The original dirty development checkout, its remote, saved records and containers are preserved.
+
+Read [remediation results](post-audit-remediation.md), [permission changes](patient-permissions.md), and the [architecture/attribution roadmap](post-audit-architecture.md) before continuing. The roadmap is planning only. Next action is owner review of the diff and explicit approval before publication. Do not start live integrations or follow the older “next action” below until this remediation is accepted.
+
+### Remediation verification and remaining work
+
+Authorization now combines restrictive patient/outcome/finance Profile capabilities with existing Contact permissions; explicit PAT scopes follow patient-linked shared routes. Org keys do not inherit patient authority; sandbox intake remains JWT-only. Two additive migrations add three default-false Profile fields and restore 21 missing indexes. CI has an independent restricted-role security job, complete routing proof, repaired documentation checks/links and main-branch targeting. The architecture document remains a proposal only.
+
+Measured checks: 181 PostgreSQL security cases plus 8 restored legacy tenant/pool cases passed under a non-superuser NOBYPASSRLS role with migrations; all 28 new authorization cases passed. SQLite compatibility: 6,286 passed/16 skipped; PostgreSQL compatibility: 6,295 passed/7 skipped. All security skips were subsequently routed and executed successfully; documentation skips were checked separately. Final routing: 6,483 = 6,294 compatibility + 189 security, all 162 patient cases included. Frontend: 822 tests passed using one worker; Svelte check 0 errors/warnings; ESLint 0 errors/8 existing warnings. Website adapter 14 passed; strict docs and 2 publication guards passed; Ruff, migration drift, Django system check, 93 setup checks and installed-wheel startup/template checks passed. See the report for exact run order and test-partition changes.
+
+The first frontend production build compiled both bundles but was killed (exit 137) during adapter packaging while other workloads ran; the standalone retry passed with exit 0, including Node adapter packaging. No remediated-browser walkthrough, real GitHub Actions/CodeQL execution, production migration, backup drill or live integration was performed. The existing application still uses the original code and saved database at ports 5181/8000.
+
+All remediation remains uncommitted on `codex/patient-authorization-ci`. Only continuity pointers were added to the original development checkout. The next action is owner review and explicit approval before publication; no architecture implementation or production adoption is authorized by the remediation request.
 
 Updated: October 13, 2026. Prior published baseline: `67953c3f92e0e186e0e9eff47b9a412efef2489b` on [Modern-CMS](https://github.com/moderndev-seo/Modern-CMS). This handoff accompanies the twenty-second increment: consent-controlled local website attribution capture. Consult Git history for its publishing commit and verify the current branch before continuing.
 
@@ -169,7 +237,7 @@ Detailed historical evidence is in [milestone one](milestone-one.md), [milestone
 
 ## Runtime, demo and team setup
 
-Backend: Django REST Framework in `backend/`; frontend: SvelteKit in `frontend/`. Docker Compose runs backend, frontend, PostgreSQL, Redis, Celery worker and Celery beat. Frontend stays at http://localhost:5181 and API at http://localhost:8000. Use [README](../../README.md) and [team setup](team-setup.md) for installation, local magic-link sign-in and relevant checks. Never expose environment contents in logs or handoff documents.
+Backend: Django REST Framework in `backend/`; frontend: SvelteKit in `frontend/`. Docker Compose runs backend, frontend, PostgreSQL, Redis, Celery worker and Celery beat. Frontend stays at http://localhost:5181 and API at http://localhost:8000. Use [README](https://github.com/moderndev-seo/Modern-CMS/blob/main/README.md) and [team setup](team-setup.md) for installation, local magic-link sign-in and relevant checks. Never expose environment contents in logs or handoff documents.
 
 Base demo: `docker compose exec backend python manage.py seed_modern_practice --member-email admin@localhost` for a new teammate's setup. Use the existing member account on an established installation. Optional billing counterparts: `docker compose exec backend python manage.py seed_modern_practice_billing`. Both commands preserve existing records on rerun; the latter adds no receipts, sends nothing and creates no matches automatically.
 
@@ -195,7 +263,7 @@ The public repository was created from a sanitized source snapshot, then updated
 
 Open this project folder (or a current clone) and say:
 
-> Read AGENTS.md and docs/modern-practice/PROJECT_STATE.md. Verify the repository and runtime state, then continue the next unfinished milestone. Preserve the recorded constraints, distinguish proposed work from requirements, update the handoff, and push verified changes to GitHub.
+> Read AGENTS.md and docs/modern-practice/PROJECT_STATE.md. Verify the repository and runtime state, then continue the next unfinished milestone. Preserve the recorded constraints, distinguish proposed work from requirements, update the handoff, and obtain explicit approval before committing or pushing.
 
 This is durable project context, not a saved transcript or a guarantee that every unrecorded conversation detail survives. If interrupted, record the partial work, outstanding checks and exact next action here before handing off when possible.
 

@@ -63,6 +63,7 @@ class APIKeyAuthentication(BaseAuthentication):
                 raise AuthenticationFailed("Invalid API Key configuration")
 
             # Set org context on request for downstream use
+            profile._patient_credential_allowed = False
             request.profile = profile
             request.org = organization
             request.META["org"] = str(organization.id)

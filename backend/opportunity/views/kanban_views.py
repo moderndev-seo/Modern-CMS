@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 from common.kanban import place_in_column
 from common.permissions import HasOrgContext, is_org_admin
 from common.validators import date_param, uuid_list_param, uuid_param
-from opportunity.access import assert_deal_access
+from opportunity.access import assert_deal_access, visible_deals_qs
 from opportunity.models import DealPipeline, DealStage, Opportunity
 from opportunity.serializer import (
     OpportunityKanbanCardSerializer,
@@ -64,7 +64,8 @@ class OpportunityKanbanView(APIView):
             pipeline = DealPipeline.default_for(org)
 
         queryset = (
-            Opportunity.objects.filter(org=org, pipeline=pipeline)
+            visible_deals_qs(request.profile, request.user)
+            .filter(pipeline=pipeline)
             .select_related("account")
             .prefetch_related("assigned_to", "tags")
         )

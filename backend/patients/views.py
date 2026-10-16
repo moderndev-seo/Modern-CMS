@@ -16,6 +16,12 @@ from contacts.access import (
     has_contact_access,
     visible_contacts_qs,
 )
+from patients.access import (
+    PatientPermission,
+    can_read_finance,
+    can_record_outcomes,
+    require_outcomes,
+)
 from patients.models import JourneyEvent, MarketingSpend, Patient, Receipt
 from patients.reporting import growth_report
 from patients.serializers import (
@@ -30,15 +36,18 @@ from tasks.models import Task
 
 
 class PracticeView(APIView):
-    permission_classes = [IsAuthenticated, HasOrgContext]
+    permission_classes = [IsAuthenticated, HasOrgContext, PatientPermission]
 
     def patient(self, request, pk):
-        return get_object_or_404(
+        patient = get_object_or_404(
             Patient.objects.select_related("contact"),
             pk=pk,
             org=request.profile.org,
             contact__org=request.profile.org,
         )
+
+        assert_contact_access(request.profile, patient.contact)
+        return patient
 
     def require_admin(self, request):
         if not is_org_admin(request.profile):
@@ -91,7 +100,9 @@ class PatientList(PracticeView):
     def get(self, request):
         queryset = (
             Patient.objects.filter(
-                org=request.profile.org, contact__org=request.profile.org
+                org=request.profile.org,
+                contact__org=request.profile.org,
+                contact__in=visible_contacts_qs(request.profile),
             )
             .select_related("contact")
             .order_by("-lead_at")
@@ -121,6 +132,7 @@ class PatientList(PracticeView):
         )
 
     def post(self, request):
+        require_outcomes(request.profile)
         serializer = PatientSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         try:
@@ -151,6 +163,8 @@ class PatientDetail(PracticeView):
         data["followups"] = FollowupSerializer(followups[:50], many=True).data
         data["followup_count"] = followups.count()
         data["can_review_billing"] = is_org_admin(request.profile)
+        data["can_read_finance"] = can_read_finance(request.profile)
+        data["can_record_outcomes"] = can_record_outcomes(request.profile)
         data["can_create_followup"] = has_contact_access(
             request.profile, patient.contact
         )
@@ -159,6 +173,9 @@ class PatientDetail(PracticeView):
         data["events"], data["appointment_corrections"] = attendance_projection(
             request.profile.org, patient, EventSerializer(events, many=True).data
         )
+        if not can_read_finance(request.profile):
+            # Omit financial fields entirely; lack of permission is not zero cash.
+            return Response(data)
         data["receipts"] = ReceiptSerializer(receipts, many=True).data
         from patients.corrections import correction_history
 
@@ -196,6 +213,7 @@ class EventList(PracticeView):
 
     def post(self, request, pk):
         patient = self.patient(request, pk)
+        require_outcomes(request.profile)
         serializer = EventSerializer(data=request.data, context={"patient": patient})
         serializer.is_valid(raise_exception=True)
         serializer.save(
@@ -207,6 +225,8 @@ class EventList(PracticeView):
 class ReceiptList(PracticeView):
     def get(self, request, pk):
         patient = self.patient(request, pk)
+        if not can_read_finance(request.profile):
+            raise PermissionDenied("Patient financial read permission is required.")
         return Response(
             ReceiptSerializer(
                 Receipt.objects.filter(
@@ -265,6 +285,8 @@ class ReceiptList(PracticeView):
 
 
 class Growth(PracticeView):
+    aggregate_only = True
+
     def get(self, request):
         today = timezone.now().date()
         field = serializers.DateField()
@@ -278,6 +300,8 @@ class Growth(PracticeView):
 
 
 class Spend(PracticeView):
+    aggregate_only = True
+
     def put(self, request):
         self.require_admin(request)
         serializer = SpendSerializer(data=request.data)

@@ -72,7 +72,7 @@ class SalesGoalListView(APIView, LimitOffsetPagination):
         results = self.paginate_queryset(queryset, request, view=self)
         # Without this the serializer's progress fields run one aggregate query
         # per goal, and the web list asks for up to 1000 of them in a page.
-        SalesGoal.attach_progress(results)
+        SalesGoal.attach_progress(results, profile=request.profile)
         serializer = SalesGoalSerializer(results, many=True)
 
         total_count = self.count
@@ -138,6 +138,7 @@ class SalesGoalDetailView(APIView):
                 {"error": True, "errors": "You do not have permission."},
                 status=status.HTTP_403_FORBIDDEN,
             )
+        SalesGoal.attach_progress([goal], profile=request.profile)
         serializer = SalesGoalSerializer(goal)
         return Response(serializer.data)
 
@@ -220,7 +221,7 @@ class SalesGoalLeaderboardView(APIView):
         if not _sees_every_goal(request):
             goals = goals.filter(_visible_to(request.profile)).distinct()
 
-        goals = SalesGoal.attach_progress(goals)
+        goals = SalesGoal.attach_progress(goals, profile=request.profile)
 
         leaderboard = []
         for goal in goals:
@@ -358,7 +359,7 @@ class SalesGoalHistoryView(APIView):
             .select_related("assigned_to", "assigned_to__user", "team")
             .order_by("name")
         )
-        SalesGoal.attach_progress(goals)
+        SalesGoal.attach_progress(goals, profile=request.profile)
 
         by_window = {window: [] for window in windows}
         for goal in goals:

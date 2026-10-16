@@ -21,6 +21,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from cases.access import assert_case_read_access
 from cases.merge_views import _can_merge
 from cases.models import Case, EmailMessage
 from cases.serializer import CaseSerializer, parent_access_context
@@ -58,6 +59,7 @@ class CaseUnmergeView(APIView):
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
+            assert_case_read_access(request.profile, source)
             if source.merged_into_id is None:
                 return Response(
                     {"error": True, "errors": "This ticket is not currently merged."},

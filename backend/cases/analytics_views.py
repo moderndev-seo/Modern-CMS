@@ -23,9 +23,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cases import analytics
-from cases.access import is_org_admin
+from cases.access import is_org_admin, visible_cases_qs
 from cases.analytics import DEFAULT_SERVICE_DAYS
-from cases.models import Case
 from cases.serializer import CaseSerializer, parent_access_context
 from common.csv_export import csv_response, local_iso
 from common.permissions import HasOrgContext
@@ -102,7 +101,8 @@ def _filtered_qs(request) -> tuple[object, datetime, datetime]:
     params = request.query_params
 
     qs = (
-        Case.objects.filter(org=profile.org, is_active=True)
+        visible_cases_qs(profile)
+        .filter(is_active=True)
         .filter(merged_into__isnull=True)
         .exclude(status="Duplicate")
     )
@@ -216,9 +216,11 @@ class AnalyticsServiceView(_AnalyticsBaseView):
                 {"error": True, "errors": "Admin access required"}, status=403
             )
         days = _parse_days(request.query_params.get("days"))
-        qs = Case.objects.filter(
-            org=request.profile.org, is_active=True, merged_into__isnull=True
-        ).exclude(status="Duplicate")
+        qs = (
+            visible_cases_qs(request.profile)
+            .filter(is_active=True, merged_into__isnull=True)
+            .exclude(status="Duplicate")
+        )
         data = analytics.compute_service_overview(qs, request.profile.org_id, days)
         return Response(data)
 
@@ -248,8 +250,8 @@ class AnalyticsDrilldownView(_AnalyticsBaseView):
             )
         except ValueError as exc:
             return Response({"error": str(exc)}, status=400)
-        cases = Case.objects.filter(org=request.profile.org, id__in=ids).order_by(
-            "-created_at"
+        cases = (
+            visible_cases_qs(request.profile).filter(id__in=ids).order_by("-created_at")
         )
         data = CaseSerializer(
             cases, many=True, context=parent_access_context(request.profile, cases)
@@ -305,8 +307,8 @@ class AnalyticsExportView(_AnalyticsBaseView):
             return Response({"error": str(exc)}, status=400)
 
         ids = [UUID(str(cid)) for cid in ids_iter]
-        cases_qs = Case.objects.filter(org=request.profile.org, id__in=ids).order_by(
-            "-created_at"
+        cases_qs = (
+            visible_cases_qs(request.profile).filter(id__in=ids).order_by("-created_at")
         )
 
         def rows():

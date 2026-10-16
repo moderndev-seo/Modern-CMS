@@ -9,6 +9,7 @@ Run with: pytest common/tests/test_multitenancy.py -v
 
 from unittest.mock import MagicMock
 
+import pytest
 from django.core.exceptions import ValidationError
 from django.test import RequestFactory, TestCase
 from rest_framework.test import APIClient
@@ -369,6 +370,7 @@ class TestNullOrgPrevention(MultiTenancyBaseTestCase):
             comment.save()
 
 
+@pytest.mark.postgres_only
 class TestRLSIntegration(MultiTenancyBaseTestCase):
     """
     Test Row-Level Security at the database level.
@@ -401,20 +403,31 @@ class TestRLSIntegration(MultiTenancyBaseTestCase):
     def setUp(self):
         super().setUp()
 
-        # Create test data in each org
-        self.lead_a = Lead.objects.create(
-            first_name="Lead", last_name="OrgA", email="lead_a@test.com", org=self.org_a
-        )
-        self.lead_b = Lead.objects.create(
-            first_name="Lead", last_name="OrgB", email="lead_b@test.com", org=self.org_b
-        )
+        from common.tasks import clear_rls_context, set_rls_context
 
-        self.account_a = Account.objects.create(
-            name="Account A", email="account_a@test.com", org=self.org_a
-        )
-        self.account_b = Account.objects.create(
-            name="Account B", email="account_b@test.com", org=self.org_b
-        )
+        try:
+            set_rls_context(str(self.org_a.id))
+            self.lead_a = Lead.objects.create(
+                first_name="Lead",
+                last_name="OrgA",
+                email="lead_a@test.com",
+                org=self.org_a,
+            )
+            self.account_a = Account.objects.create(
+                name="Account A", email="account_a@test.com", org=self.org_a
+            )
+            set_rls_context(str(self.org_b.id))
+            self.lead_b = Lead.objects.create(
+                first_name="Lead",
+                last_name="OrgB",
+                email="lead_b@test.com",
+                org=self.org_b,
+            )
+            self.account_b = Account.objects.create(
+                name="Account B", email="account_b@test.com", org=self.org_b
+            )
+        finally:
+            clear_rls_context()
 
     def test_empty_context_returns_no_rows(self):
         """With empty RLS context, queries should return zero rows (fail-safe)."""
@@ -484,30 +497,20 @@ class TestRLSIntegration(MultiTenancyBaseTestCase):
                 "RLS is bypassed for superusers - use non-superuser for testing"
             )
 
-        import uuid
+        from django.db import DatabaseError, transaction
 
-        from django.db import connection
+        from common.tasks import set_rls_context
 
-        with connection.cursor() as cursor:
-            # Set context to org_a
-            cursor.execute(
-                "SELECT set_config('app.current_org', %s, true)", [str(self.org_a.id)]
-            )
-
-            # Try to insert lead with org_b's ID (should fail due to WITH CHECK)
-            new_id = uuid.uuid4()
-            try:
-                cursor.execute(
-                    """
-                    INSERT INTO lead (id, first_name, last_name, email, org_id, created_at, updated_at)
-                    VALUES (%s, 'Test', 'Wrong Org', 'wrong@test.com', %s, NOW(), NOW())
-                """,
-                    [str(new_id), str(self.org_b.id)],
+        set_rls_context(str(self.org_a.id))
+        with pytest.raises(DatabaseError, match="row-level security") as denied:
+            with transaction.atomic():
+                Lead.objects.create(
+                    first_name="Test",
+                    last_name="Wrong Org",
+                    email="wrong@test.com",
+                    org=self.org_b,
                 )
-                self.fail("Should not be able to insert record with wrong org_id")
-            except Exception:
-                # Expected - RLS should prevent this insert
-                pass
+        assert denied.value.__cause__.sqlstate == "42501"
 
     def test_celery_task_rls_context(self):
         """Celery tasks should be able to set RLS context."""
@@ -551,11 +554,7 @@ class TestRLSIntegration(MultiTenancyBaseTestCase):
                 )
                 result = cursor.fetchone()
 
-                if result:
-                    rls_enabled, rls_forced = result
-                    # Just check that RLS is enabled
-                    if not rls_enabled:
-                        self.fail(f"RLS not enabled on {table}")
+                self.assertEqual(result, (True, True), f"Forced RLS missing on {table}")
 
 
 class TestPermissionClasses(MultiTenancyBaseTestCase):

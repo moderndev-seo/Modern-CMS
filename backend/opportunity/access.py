@@ -9,6 +9,7 @@ from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
 
 from common.permissions import is_org_admin
+from contacts.access import has_patient_link_access, patient_link_queryset
 from opportunity.models import Opportunity
 
 _DENIED = "You do not have Permission to perform this action"
@@ -25,6 +26,8 @@ def has_deal_access(profile, user, opportunity):
     own record. ``delete()`` got the same comparison right, which is how you
     could tell it was a mistake rather than a policy.
     """
+    if not has_patient_link_access(profile, opportunity, financial=True):
+        return False
     if is_org_admin(profile) or user.is_superuser:
         return True
     if profile.user_id == opportunity.created_by_id:
@@ -34,7 +37,9 @@ def has_deal_access(profile, user, opportunity):
 
 def visible_deals_qs(profile, user):
     """Deals ``profile`` may open, the queryset form of `has_deal_access`."""
-    qs = Opportunity.objects.filter(org=profile.org)
+    qs = patient_link_queryset(
+        Opportunity.objects.filter(org=profile.org), profile, financial=True
+    )
     if is_org_admin(profile) or user.is_superuser:
         return qs
     return qs.filter(Q(created_by=profile.user) | Q(assigned_to=profile)).distinct()

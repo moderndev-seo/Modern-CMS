@@ -22,7 +22,7 @@ or `write`. `read` covers `GET`/`HEAD`/`OPTIONS`; `write` covers `POST`/`PUT`/`P
 `write` does not imply `read`. A token that may create leads but not list them is a coherent thing
 to want, and a scope whose name understates what it grants stops being a boundary.
 
-**An empty scope list means unrestricted.** Every token issued before enforcement existed carries
+**An empty scope list preserves legacy CRM access, except for the protected patient and user-administration boundaries below.** Every token issued before enforcement existed carries
 `[]`, and the behaviour has always been "inherits the owning profile's role", so treating `[]` as
 "nothing" would have revoked every live token on deploy. Omit `scopes` and you get exactly the old
 behaviour.
@@ -209,3 +209,8 @@ with no grace period. A non-admin caller gets `403` with
 `{"error": true, "errors": "Only organization admins can access the API key"}` from either method;
 a caller with no org context at all gets `400` with
 `{"error": true, "errors": "Organization context required"}`.
+
+
+## Modern Practice patient boundary
+
+The patient resource requires explicit `patients:read` (and `patients:write` for writes). Legacy empty scopes and wildcard scopes do not implicitly grant it. A PAT still needs its owning practice profile's patient/outcome/finance capabilities and contact access. Patient-linked shared contacts, tasks and financial documents apply the same effective restriction; organization keys cannot inherit patient access from their borrowed administrator identity. Sandbox attribution intake remains JWT-only. Writes to `/api/users/` and `/api/user/` administration require a signed-in session, so credentials cannot grant capabilities indirectly. See [patient permissions](../modern-practice/patient-permissions.md) before adapting an existing integration.

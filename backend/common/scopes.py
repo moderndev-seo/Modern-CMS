@@ -22,12 +22,13 @@ THE GRAMMAR
 them is a coherent thing to want, and a scope whose name understates what it
 grants is how a boundary quietly stops being one.
 
-AN EMPTY SCOPE LIST MEANS UNRESTRICTED
+AN EMPTY SCOPE LIST PRESERVES LEGACY CRM ACCESS
     Every token issued before this module existed carries ``scopes=[]``, and the
     documented behaviour has always been "inherits the owning profile's role".
     Treating ``[]`` as "nothing" would revoke every live token on deploy.
     Treating it as "everything" preserves exactly today's behaviour for them,
-    and the credential deny-list below still applies.
+    and the credential deny-list below still applies. Patient data requires an
+    explicit patients scope, and user administration writes require a session.
 
 THE DENY-LIST IS NOT A SCOPE
     ``CREDENTIAL_PATHS`` is checked first and cannot be satisfied by any scope,
@@ -72,6 +73,7 @@ API_RESOURCES = frozenset(
         "opportunities",
         "org",
         "packs",
+        "patients",
         # The customer self-service portal. Listed to keep the vocabulary
         # honest against the live URLconf, not because a non-interactive
         # credential can reach it: every view under this root pins
@@ -190,10 +192,23 @@ def _parsed(scopes):
     return out
 
 
+def patient_records_allow(scopes, method):
+    """Explicit patient grants follow linked records through every API resource."""
+    held = _parsed(scopes or [])
+    return "patients:read" in held and (
+        action_for_method(method) == "read" or "patients:write" in held
+    )
+
+
 def scopes_allow(scopes, method, path):
     """True when a credential holding ``scopes`` may make this request."""
+    # Protected patient data requires an explicit resource grant, even for
+    # legacy unrestricted tokens and wildcard credentials. Profile and object
+    # permissions still apply after this scope check.
+    if resource_for_path(path) == "patients":
+        return f"patients:{action_for_method(method)}" in _parsed(scopes or [])
     if not scopes:
-        return True  # unrestricted; see the module docstring
+        return True  # legacy behavior outside the protected patient resource
     held = _parsed(scopes)
     if not held:
         return False
@@ -219,6 +234,11 @@ def check_request(scopes, method, path):
 
     The single entry point the middleware calls, for both credential kinds.
     """
+    if (
+        resource_for_path(path) in {"user", "users"}
+        and action_for_method(method) == "write"
+    ):
+        return "Sign in to manage practice membership and capability grants."
     denial = credential_path_denial(path)
     if denial is not None:
         return denial

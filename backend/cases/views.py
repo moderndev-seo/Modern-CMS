@@ -30,7 +30,7 @@ from cases.access import (
     is_org_admin,
     visible_cases_qs,
 )
-from cases.merge_views import can_merge_case
+from cases.merge_views import can_merge_case, mergeable_cases_qs
 from cases.models import Case, ReopenPolicy, Solution
 from cases.models import EmailMessage as _EmailMessageModel  # noqa: F401  (used below)
 from cases.serializer import (
@@ -71,7 +71,11 @@ from common.utils import (
     validate_attachment,
 )
 from common.validators import date_param, payload_id_list, uuid_list_param, uuid_param
-from contacts.access import replace_visible_contacts, visible_contacts_qs
+from contacts.access import (
+    assert_generic_patient_access,
+    replace_visible_contacts,
+    visible_contacts_qs,
+)
 from contacts.serializer import ContactLinkSerializer, ContactPickerSerializer
 
 # A ticket is "open" while somebody still owes the customer something. The
@@ -279,7 +283,9 @@ class CaseListView(APIView, LimitOffsetPagination):
         # contacts as `id` and their names, which is all the ticket form reads.
         if params.get("slim") != "true":
             context["accounts_list"] = AccountPickerSerializer(accounts, many=True).data
-            context["contacts_list"] = ContactPickerSerializer(contacts, many=True).data
+            context["contacts_list"] = ContactPickerSerializer(
+                contacts, many=True, context={"request": self.request}
+            ).data
         # `profiles` was computed a few lines up, narrowed to admins for
         # non-admins, even, and then dropped on the floor. So a ticket form
         # had no way to populate an assignee picker from the endpoint that
@@ -710,6 +716,15 @@ class CaseDetailView(APIView):
             if sources
             else set()
         )
+        mergeable = (
+            set(
+                mergeable_cases_qs(request.profile)
+                .filter(id__in=[src.id for src in sources])
+                .values_list("id", flat=True)
+            )
+            if can_merge and sources
+            else set()
+        )
         merged_from = []
         for src in sources:
             restricted = src.id not in readable
@@ -719,18 +734,24 @@ class CaseDetailView(APIView):
                     "name": None if restricted else src.name,
                     "merged_at": src.merged_at,
                     "restricted": restricted,
-                    "can_unmerge": can_merge and can_merge_case(request.profile, src),
+                    "can_unmerge": src.id in mergeable,
                 }
             )
 
         context.update(
             {
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": CommentSerializer(public_comments, many=True).data,
-                "internal_notes": CommentSerializer(internal_notes, many=True).data,
+                "comments": CommentSerializer(
+                    public_comments, many=True, context={"request": request}
+                ).data,
+                "internal_notes": CommentSerializer(
+                    internal_notes, many=True, context={"request": request}
+                ).data,
                 # Same people as `cases_obj.contacts`, so the same fields.
                 "contacts": ContactLinkSerializer(
-                    self.cases.contacts.all(), many=True
+                    self.cases.contacts.all(),
+                    many=True,
+                    context={"request": self.request},
                 ).data,
                 "solutions": SolutionSerializer(linked_solutions, many=True).data,
                 "activities": ActivitySerializer(recent_activities, many=True).data,
@@ -823,10 +844,14 @@ class CaseDetailView(APIView):
                 ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
                 "comments": CommentSerializer(
-                    comments_qs.filter(is_internal=False), many=True
+                    comments_qs.filter(is_internal=False),
+                    many=True,
+                    context={"request": request},
                 ).data,
                 "internal_notes": CommentSerializer(
-                    comments_qs.filter(is_internal=True), many=True
+                    comments_qs.filter(is_internal=True),
+                    many=True,
+                    context={"request": request},
                 ).data,
             }
         )
@@ -977,6 +1002,7 @@ class CaseCommentView(APIView):
     def put(self, request, pk, format=None):
         params = request.data
         obj = self.get_object(pk)
+        assert_generic_patient_access(request.profile, obj)
         if is_org_admin(request.profile) or request.profile == obj.commented_by:
             # No `if params.get("comment")` guard around the block below. It
             # used to sit here, and a body with a blank or absent `comment`
@@ -985,7 +1011,9 @@ class CaseCommentView(APIView):
             # comment when the real answer is that the field is required.
             # `comment` is a non-blank CharField, so the serializer already
             # answers that with a 400 naming the field.
-            serializer = CommentSerializer(obj, data=params)
+            serializer = CommentSerializer(
+                obj, data=params, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(
@@ -1023,8 +1051,11 @@ class CaseCommentView(APIView):
         """Handle partial updates to a comment."""
         params = request.data
         obj = self.get_object(pk)
+        assert_generic_patient_access(request.profile, obj)
         if is_org_admin(request.profile) or request.profile == obj.commented_by:
-            serializer = CommentSerializer(obj, data=params, partial=True)
+            serializer = CommentSerializer(
+                obj, data=params, partial=True, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(
@@ -1058,6 +1089,7 @@ class CaseCommentView(APIView):
     )
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
+        assert_generic_patient_access(request.profile, self.object)
         if is_org_admin(request.profile) or request.profile == self.object.commented_by:
             self.object.delete()
             return Response(
@@ -1116,6 +1148,7 @@ class CaseAttachmentView(APIView):
             ).first()
         except (DjangoValidationError, ValueError):
             raise Http404("No such attachment.")
+        assert_generic_patient_access(request.profile, self.object)
         if self.object is None:
             raise Http404("No such attachment.")
 

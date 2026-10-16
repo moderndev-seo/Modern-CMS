@@ -577,6 +577,16 @@ def _validate_document_link(value, visible, stored_id, label):
 
 def validate_document_contact(contact_id, profile, instance):
     """The contact on an invoice, estimate or recurring invoice."""
+    from common.permissions import is_org_admin
+    from patients.models import Patient
+
+    if (
+        not is_org_admin(profile)
+        and Patient.objects.filter(org=profile.org, contact_id=contact_id).exists()
+    ):
+        raise serializers.ValidationError(
+            "Only practice administrators may write patient financial documents."
+        )
     return _validate_document_link(
         contact_id,
         visible_contacts_qs(profile),

@@ -15,7 +15,18 @@ from contacts.models import Contact
 # - created_on_arrow (frontend computes its own humanized timestamps)
 
 
-class ContactSerializer(serializers.ModelSerializer):
+class ProtectedPatientContact:
+    """Nested CRM links must not become a second route to patient identity."""
+
+    def to_representation(self, instance):
+        from contacts.access import may_serialize_contact
+
+        if not may_serialize_contact(instance, self.context):
+            return {"restricted": True}
+        return super().to_representation(instance)
+
+
+class ContactSerializer(ProtectedPatientContact, serializers.ModelSerializer):
     """Serializer for reading Contact data"""
 
     teams = TeamsSerializer(read_only=True, many=True)
@@ -99,7 +110,7 @@ class ContactSerializer(serializers.ModelSerializer):
         )
 
 
-class ContactPickerSerializer(serializers.ModelSerializer):
+class ContactPickerSerializer(ProtectedPatientContact, serializers.ModelSerializer):
     """A contact as an option in a form's contact select.
 
     The `contacts_list` catalogues on `/api/cases/`, `/api/opportunities/` and

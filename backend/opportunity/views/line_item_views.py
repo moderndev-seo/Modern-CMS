@@ -4,9 +4,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.permissions import HasOrgContext, is_org_admin
+from common.permissions import HasOrgContext
 from invoices.models import Product
 from invoices.serializer import ProductSerializer
+from opportunity.access import assert_deal_access
 from opportunity.models import Opportunity, OpportunityLineItem
 from opportunity.serializer import (
     OpportunityLineItemCreateSerializer,
@@ -28,27 +29,12 @@ class OpportunityLineItemListView(APIView):
         return Opportunity.objects.filter(id=pk, org=self.request.profile.org).first()
 
     def check_opportunity_access(self, opportunity):
-        """Check if user has access to the opportunity"""
-        if not opportunity:
+        if opportunity is None:
             return Response(
                 {"error": True, "message": "Opportunity not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        if (
-            not is_org_admin(self.request.profile)
-            and not self.request.user.is_superuser
-        ):
-            if not (
-                (self.request.profile.user == opportunity.created_by)
-                or (self.request.profile in opportunity.assigned_to.all())
-            ):
-                return Response(
-                    {
-                        "error": True,
-                        "message": "You do not have permission to access this opportunity",
-                    },
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        assert_deal_access(self.request.profile, self.request.user, opportunity)
         return None
 
     @extend_schema(
@@ -166,27 +152,12 @@ class OpportunityLineItemDetailView(APIView):
         ).first()
 
     def check_opportunity_access(self, opportunity):
-        """Check if user has access to the opportunity"""
-        if not opportunity:
+        if opportunity is None:
             return Response(
                 {"error": True, "message": "Opportunity not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        if (
-            not is_org_admin(self.request.profile)
-            and not self.request.user.is_superuser
-        ):
-            if not (
-                (self.request.profile.user == opportunity.created_by)
-                or (self.request.profile in opportunity.assigned_to.all())
-            ):
-                return Response(
-                    {
-                        "error": True,
-                        "message": "You do not have permission to access this opportunity",
-                    },
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+        assert_deal_access(self.request.profile, self.request.user, opportunity)
         return None
 
     @extend_schema(

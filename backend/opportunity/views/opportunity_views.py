@@ -211,7 +211,9 @@ class OpportunityListView(APIView, LimitOffsetPagination):
         )
         # The org's stages once for the page, not per row.
         opportunities = OpportunitySerializer(
-            results_opportunities, many=True, context={"stages": stage_index(org.id)}
+            results_opportunities,
+            many=True,
+            context={"stages": stage_index(org.id), "request": self.request},
         ).data
         if results_opportunities:
             offset = queryset.filter(id__gte=results_opportunities[-1].id).count()
@@ -230,7 +232,9 @@ class OpportunityListView(APIView, LimitOffsetPagination):
         )
         context["opportunities"] = opportunities
         context["accounts_list"] = AccountPickerSerializer(accounts, many=True).data
-        context["contacts_list"] = ContactPickerSerializer(contacts, many=True).data
+        context["contacts_list"] = ContactPickerSerializer(
+            contacts, many=True, context={"request": self.request}
+        ).data
         context["tags"] = TagsSerializer(
             Tags.objects.filter(org=self.request.profile.org, is_active=True), many=True
         ).data
@@ -543,6 +547,7 @@ class OpportunityDetailView(APIView):
     )
     def delete(self, request, pk, format=None):
         self.object = self.get_object(pk)
+        self.assert_deal_access(self.object)
         if not self.object:
             return Response(
                 {"error": True, "errors": "Opportunity not found."},
@@ -603,7 +608,9 @@ class OpportunityDetailView(APIView):
         self.assert_deal_access(self.opportunity)
 
         context = {}
-        context["opportunity_obj"] = OpportunitySerializer(self.opportunity).data
+        context["opportunity_obj"] = OpportunitySerializer(
+            self.opportunity, context={"request": self.request}
+        ).data
 
         comment_permission = (
             self.request.profile.user_id == self.opportunity.created_by_id
@@ -641,7 +648,9 @@ class OpportunityDetailView(APIView):
         ).order_by("-id")
         context.update(
             {
-                "comments": CommentSerializer(comments, many=True).data,
+                "comments": CommentSerializer(
+                    comments, many=True, context={"request": request}
+                ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
                 # Only the people the viewer may open: each row links to the
                 # contact's own page, and opening the deal is not access to
@@ -652,6 +661,7 @@ class OpportunityDetailView(APIView):
                         id__in=visible_contacts_qs(self.request.profile).values("id")
                     ),
                     many=True,
+                    context={"request": self.request},
                 ).data,
                 "users": ProfileSerializer(
                     Profile.objects.filter(
@@ -747,9 +757,13 @@ class OpportunityDetailView(APIView):
         ).order_by("-id")
         context.update(
             {
-                "opportunity_obj": OpportunitySerializer(self.opportunity_obj).data,
+                "opportunity_obj": OpportunitySerializer(
+                    self.opportunity_obj, context={"request": self.request}
+                ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": CommentSerializer(comments, many=True).data,
+                "comments": CommentSerializer(
+                    comments, many=True, context={"request": request}
+                ).data,
             }
         )
         return Response(context)

@@ -15,11 +15,9 @@ driving Django's. Two reasons:
   the default pool size the next checkout may land on a connection that was
   never dirtied, and the test passes for the wrong reason. The assertions on
   ``pg_backend_pid()`` below exist to make that failure mode impossible.
-* The default suite runs on SQLite (``crm/test_settings.py``), which has no
-  ``set_config`` at all, so nothing here can be expressed through Django's
-  ``connection``. Connection params are read from the same environment
-  variables ``crm/settings.py`` uses, so this runs against whatever PostgreSQL
-  the developer already has configured, and skips when there isn't one.
+* This module is routed to the restricted-role PostgreSQL security job. Pool
+  connections use Django's active test database; they never target a developer's
+  configured application database or silently skip a missing test service.
 
 Note that these tests do NOT need a non-superuser role. They assert that the
 session variable is cleared, which is upstream of RLS enforcement and therefore
@@ -28,12 +26,11 @@ check that RLS then actually hides rows does need a non-superuser role; see
 `RLS_SETUP.md`.
 """
 
-import os
-
+import psycopg_pool
 import pytest
+from django.db import connection
 
-psycopg = pytest.importorskip("psycopg")
-psycopg_pool = pytest.importorskip("psycopg_pool")
+pytestmark = pytest.mark.postgres_only
 
 from common.rls.pool import reset_rls_context  # noqa: E402
 
@@ -42,24 +39,16 @@ ORG_B = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 
 
 def _conn_kwargs():
-    """Mirror the connection params crm/settings.py builds from the env."""
+    """Use the isolated database pytest-django has already created."""
+    configured = connection.settings_dict
     return {
-        "dbname": os.environ.get("DBNAME", "crm_db"),
-        "user": os.environ.get("DBUSER", "postgres"),
-        "password": os.environ.get("DBPASSWORD", "postgres"),
-        "host": os.environ.get("DBHOST", "localhost"),
-        "port": os.environ.get("DBPORT", "5432"),
+        "dbname": configured["NAME"],
+        "user": configured["USER"],
+        "password": configured["PASSWORD"],
+        "host": configured["HOST"],
+        "port": configured["PORT"],
         "autocommit": True,
     }
-
-
-@pytest.fixture(scope="module", autouse=True)
-def _require_postgres():
-    try:
-        with psycopg.connect(**_conn_kwargs(), connect_timeout=3):
-            pass
-    except Exception as exc:  # pragma: no cover - environment dependent
-        pytest.skip(f"PostgreSQL not reachable for pool isolation tests: {exc}")
 
 
 def _single_connection_pool(reset):

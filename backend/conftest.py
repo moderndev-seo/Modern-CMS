@@ -15,6 +15,8 @@ not a hypothetical. The enterprise suite re-exported this file with
 whole time.
 """
 
+import pytest
+
 from common.testing import (  # noqa: F401
     _make_authenticated_client,
     _restore_rls_context_after_each_request,
@@ -36,3 +38,38 @@ from common.testing import (  # noqa: F401
     user_client,
     user_profile,
 )
+
+
+def pytest_collection_modifyitems(items):
+    """Patient workflows depend on PostgreSQL triggers, not SQLite emulation.
+
+    Route the entire app (including future test modules) to the policy-bound
+    security job. Other PostgreSQL tests keep their explicit module/test marks.
+    No test is skipped here: CI selects the complementary two partitions.
+    """
+    from pathlib import Path
+
+    import pytest
+
+    patient_tests = Path(__file__).parent / "patients" / "tests"
+    for item in items:
+        if item.path.is_relative_to(patient_tests):
+            item.add_marker(pytest.mark.postgres_only)
+
+
+@pytest.fixture(autouse=True)
+def _verify_security_database_role(request, db):
+    if not request.node.get_closest_marker("postgres_only"):
+        return
+    from django.db import connection
+
+    assert connection.vendor == "postgresql", (
+        "Select -m 'not postgres_only' for SQLite; security tests require PostgreSQL."
+    )
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname=current_user"
+        )
+        assert cursor.fetchone() == (False, False), (
+            "Security tests require a non-superuser NOBYPASSRLS role."
+        )

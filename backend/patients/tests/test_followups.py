@@ -50,9 +50,8 @@ def test_followup_preserves_record_permissions(admin_client, user_client, org_a)
     created = followup(admin_client, patient)
     assert created.status_code == 201
     task_id = created.data["id"]
-    detail = user_client.get(f"{BASE}{patient['id']}/").data
-    assert detail["followups"] == []
-    assert not detail["can_create_followup"]
+    # Contact denial now protects the whole patient, not just its follow-up controls.
+    assert user_client.get(f"{BASE}{patient['id']}/").status_code == 403
     assert followup(user_client, patient).status_code == 403
     assert (
         user_client.patch(
@@ -60,7 +59,7 @@ def test_followup_preserves_record_permissions(admin_client, user_client, org_a)
             {"status": "Completed"},
             format="json",
         ).status_code
-        == 404
+        == 403
     )
     other = create(admin_client)
     assert (

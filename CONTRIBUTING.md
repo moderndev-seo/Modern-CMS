@@ -21,11 +21,11 @@ Full instructions (cloning, Docker, the backend (`uv`), the frontend (`pnpm`), r
 
 ## Submitting a Pull Request
 
-1. Create a branch from `master` with a descriptive name.
+1. Create a branch from `main` with a descriptive name.
 2. Make focused changes and include tests where appropriate.
 3. Run the relevant development checks. See [Testing](docs/contributing/testing.md) and [Code style](docs/contributing/code-style.md).
 4. Update documentation when behavior, setup, or public APIs change.
-5. Push your branch and open a pull request against `master`.
+5. Push your branch and open a pull request against `main`.
 
 In the pull request description, explain what changed, why it changed, how it was tested, and include screenshots for visible UI changes. See [Pull requests](docs/contributing/pull-requests.md) for what CI runs and what review focuses on.
 
