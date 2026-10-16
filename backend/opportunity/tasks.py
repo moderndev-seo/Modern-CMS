@@ -11,6 +11,7 @@ from django.utils import timezone
 from common.links import frontend_url
 from common.models import Org, Profile
 from common.org_time import activate_org_timezone
+from contacts.access import has_patient_link_access, patient_link_queryset
 from opportunity.models import Opportunity, SalesGoal
 
 logger = logging.getLogger(__name__)
@@ -28,12 +29,12 @@ def _set_rls_context_safe(org_id):
 def send_email_to_assigned_user(recipients, opportunity_id, org_id):
     """Send Mail To Users When they are assigned to an opportunity"""
     _set_rls_context_safe(org_id)
-    opportunity = Opportunity.objects.get(id=opportunity_id)
+    opportunity = Opportunity.objects.get(id=opportunity_id, org_id=org_id)
     created_by = opportunity.created_by
     for user in recipients:
         recipients_list = []
-        profile = Profile.objects.filter(id=user, is_active=True).first()
-        if profile:
+        profile = Profile.objects.filter(id=user, org_id=org_id, is_active=True).first()
+        if profile and has_patient_link_access(profile, opportunity, financial=True):
             recipients_list.append(profile.user.email)
             context = {}
             context["url"] = frontend_url(f"/pipeline/{opportunity.id}")
@@ -97,6 +98,13 @@ def send_stale_deals_alert(org, stale_opps):
                 user_deals[admin].append((opp, label, days, expected))
 
     for profile, deals in user_deals.items():
+        deals = [
+            row
+            for row in deals
+            if has_patient_link_access(profile, row[0], financial=True)
+        ]
+        if not deals:
+            continue
         context = {
             "user": profile.user,
             "deals": [
@@ -213,7 +221,16 @@ def check_goal_milestones():
 
 
 def _send_goal_milestone_email(profile, goal, milestone_label, percent, achieved):
-    """Send a milestone notification email for a sales goal."""
+    """Send a milestone only when its underlying deal values are visible."""
+    if not profile.is_active or profile.org_id != goal.org_id:
+        return
+    if goal.goal_type != "ACTIVITIES":
+        deals = goal._opportunity_queryset()
+        visible = patient_link_queryset(deals, profile, financial=True)
+        if deals.exclude(pk__in=visible.values("pk")).exists():
+            # Even the milestone/percentage can disclose the hidden contribution.
+            # Suppress this recipient's notice rather than sending a false total.
+            return
     context = {
         "user": profile.user,
         "goal": goal,

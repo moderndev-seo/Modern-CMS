@@ -432,7 +432,9 @@ class TaskDetailView(APIView):
                     self.task_obj, context={"request": self.request}
                 ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": CommentSerializer(comments, many=True).data,
+                "comments": CommentSerializer(
+                    comments, many=True, context={"request": self.request}
+                ).data,
                 "users_mention": users_mention,
                 "assigned_data": assigned_data,
                 "custom_field_definitions": CustomFieldDefinitionSerializer(
@@ -536,7 +538,9 @@ class TaskDetailView(APIView):
                     self.task_obj, context={"request": self.request}
                 ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": CommentSerializer(comments, many=True).data,
+                "comments": CommentSerializer(
+                    comments, many=True, context={"request": self.request}
+                ).data,
             }
         )
         return Response(context)
@@ -813,7 +817,9 @@ class TaskCommentView(APIView):
             # below, which told an author they may not edit their own comment.
             # `comment` is a non-blank CharField, so the serializer answers
             # with a 400 naming the field.
-            serializer = CommentSerializer(obj, data=params)
+            serializer = CommentSerializer(
+                obj, data=params, context={"request": self.request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(
@@ -854,7 +860,9 @@ class TaskCommentView(APIView):
         obj = self.get_object(pk)
         assert_generic_patient_access(request.profile, obj)
         if is_org_admin(request.profile) or request.profile == obj.commented_by:
-            serializer = CommentSerializer(obj, data=params, partial=True)
+            serializer = CommentSerializer(
+                obj, data=params, partial=True, context={"request": self.request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(

@@ -546,7 +546,9 @@ class LeadDetailView(APIView):
                     self.lead_obj, context={"request": self.request}
                 ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": LeadCommentSerializer(comments, many=True).data,
+                "comments": LeadCommentSerializer(
+                    comments, many=True, context={"request": self.request}
+                ).data,
                 "users_mention": users_mention,
                 "assigned_data": assigned_data,
             }
@@ -702,7 +704,9 @@ class LeadDetailView(APIView):
                     self.lead_obj, context={"request": self.request}
                 ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": LeadCommentSerializer(comments, many=True).data,
+                "comments": LeadCommentSerializer(
+                    comments, many=True, context={"request": self.request}
+                ).data,
             }
         )
         return Response(context)

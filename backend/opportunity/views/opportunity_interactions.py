@@ -48,7 +48,9 @@ class OpportunityCommentView(APIView):
             # below, which told an author they may not edit their own comment.
             # `comment` is a non-blank CharField, so the serializer answers
             # with a 400 naming the field.
-            serializer = CommentSerializer(obj, data=params)
+            serializer = CommentSerializer(
+                obj, data=params, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(
@@ -92,7 +94,9 @@ class OpportunityCommentView(APIView):
             or request.user.is_superuser
             or request.profile == obj.commented_by
         ):
-            serializer = CommentSerializer(obj, data=params, partial=True)
+            serializer = CommentSerializer(
+                obj, data=params, partial=True, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(

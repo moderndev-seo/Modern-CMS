@@ -1,3 +1,17 @@
+## PR #1 review corrections — October 16, 2026
+
+Objective: finish the four security-review findings and verified adjacent bypasses on existing `codex/patient-authorization-ci`, then stop for independent human review and separate owner merge approval. The owner's latest request explicitly authorizes targeted fixes, tests, commits/pushes and four review-thread replies. No merge, deployment, repository administration, saved database changes or Phase 2A is authorized.
+
+Implementation and final local verification are complete. See [the consolidated review report](pr1-review-remediation.md) for root causes, affected files, regression evidence, intermediate failures and limits. Corrections cover opportunity Kanban/line items, case watching/analytics/merge/unmerge/bulk deletion, member grants and trusted portal-author contexts. Verified adjacent goal reporting and opportunity notification disclosures are corrected. Merged-source permissions are batched without weakening current patient/Contact access. No new schema, attribution or receipt arithmetic changes.
+
+Final results: **281 restricted PostgreSQL security tests passed** (zero failures/skips; all 66 new regressions and 254 patient cases); **6,294 PostgreSQL compatibility tests passed**; **6,285 SQLite tests passed/nine expected JSON-filter skips**, 90.35% coverage. Routing accounts for all 6,575 cases. Ruff/825-file formatting, system/migration checks, frontend 822 tests/70 files, types (zero errors/warnings), lint (eight existing warnings), formatting, production build, strict docs and two publication guards passed. Security role has neither superuser nor BYPASSRLS privileges; 89 tables have forced RLS. Exact warning counts and failed/interrupted runs are recorded in the report; no assertions were relaxed.
+
+Delivery is on [PR #1](https://github.com/moderndev-seo/Modern-CMS/pull/1), targeting main. The corresponding PR review summary records the exact published SHA, thread replies and seven hosted checks. Read the current PR head/checks before continuing; do not reuse old-head CI as proof. Git CLI lacks credentials, so publication uses the connected API with exact tree comparison and a non-forced expected-head update. The original checkout/history and private architecture packages are preserved. Temporary dependencies are removed; no saved demo or production database was migrated. The original demo configuration still uses ports 5181/8000.
+
+Remaining gate: qualified independent human review and separate owner merge approval. Green automated checks are not independent approval. Preserve Architecture v0.2.0/A01–A10; Group B/C remain pending. After the security merge, the separate preserved 15-file architecture docs PR is next. Fictional Phase 2A may start only after the required security and documentation approvals/merges. No live integrations or production readiness claim.
+
+Historical snapshots below describe earlier states and do not override this current handoff.
+
 # Modern Practice CRM — project handoff
 
 ## GitHub publication — October 14, 2026

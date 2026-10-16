@@ -605,7 +605,9 @@ class ContactDetailView(APIView):
         ).order_by("-id")
         context.update(
             {
-                "comments": CommentSerializer(comments, many=True).data,
+                "comments": CommentSerializer(
+                    comments, many=True, context={"request": request}
+                ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
                 "assigned_data": assigned_data,
                 "tasks": TaskSerializer(
@@ -770,7 +772,9 @@ class ContactDetailView(APIView):
                     self.contact_obj, context={"request": self.request}
                 ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": CommentSerializer(comments, many=True).data,
+                "comments": CommentSerializer(
+                    comments, many=True, context={"request": request}
+                ).data,
             }
         )
         return Response(context)
@@ -898,7 +902,9 @@ class ContactCommentView(APIView):
         obj = self.get_object(pk)
         assert_generic_patient_access(request.profile, obj)
         if is_org_admin(request.profile) or request.profile == obj.commented_by:
-            serializer = CommentSerializer(obj, data=params)
+            serializer = CommentSerializer(
+                obj, data=params, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(
@@ -938,7 +944,9 @@ class ContactCommentView(APIView):
         obj = self.get_object(pk)
         assert_generic_patient_access(request.profile, obj)
         if is_org_admin(request.profile) or request.profile == obj.commented_by:
-            serializer = CommentSerializer(obj, data=params, partial=True)
+            serializer = CommentSerializer(
+                obj, data=params, partial=True, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(

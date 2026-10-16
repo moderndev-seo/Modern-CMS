@@ -340,7 +340,9 @@ class InvoiceDetailView(APIView):
                     invoice, context={"request": self.request}
                 ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": CommentSerializer(comments, many=True).data,
+                "comments": CommentSerializer(
+                    comments, many=True, context={"request": request}
+                ).data,
                 "history": InvoiceHistorySerializer(
                     invoice.invoice_history.all(), many=True
                 ).data,
@@ -1837,7 +1839,9 @@ class InvoiceCommentView(APIView):
             {
                 "error": False,
                 "message": "Comment added",
-                "comment": CommentSerializer(comment).data,
+                "comment": CommentSerializer(
+                    comment, context={"request": request}
+                ).data,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -1877,7 +1881,9 @@ class InvoiceCommentDetailView(APIView):
             {
                 "error": False,
                 "message": "Comment updated",
-                "comment": CommentSerializer(comment).data,
+                "comment": CommentSerializer(
+                    comment, context={"request": request}
+                ).data,
             }
         )
 

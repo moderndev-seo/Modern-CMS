@@ -58,7 +58,9 @@ class LeadCommentView(APIView):
             or request.user.is_superuser
             or request.profile == obj.commented_by
         ):
-            serializer = LeadCommentSerializer(obj, data=params)
+            serializer = LeadCommentSerializer(
+                obj, data=params, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(
@@ -102,7 +104,9 @@ class LeadCommentView(APIView):
             or request.user.is_superuser
             or request.profile == obj.commented_by
         ):
-            serializer = LeadCommentSerializer(obj, data=params, partial=True)
+            serializer = LeadCommentSerializer(
+                obj, data=params, partial=True, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(

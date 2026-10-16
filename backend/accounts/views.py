@@ -739,7 +739,9 @@ class AccountDetailView(APIView):
         context.update(
             {
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": CommentSerializer(comments, many=True).data,
+                "comments": CommentSerializer(
+                    comments, many=True, context={"request": request}
+                ).data,
                 "contacts": ContactSerializer(
                     self.account.contacts.filter(
                         id__in=visible_contacts_qs(profile).values("id")
@@ -865,7 +867,9 @@ class AccountDetailView(APIView):
                     self.account_obj, context={"profile": request.profile}
                 ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": CommentSerializer(comments, many=True).data,
+                "comments": CommentSerializer(
+                    comments, many=True, context={"request": request}
+                ).data,
             }
         )
         return Response(context)
@@ -993,7 +997,7 @@ class AccountCommentView(APIView):
             # partial serializer. It is non-partial now, like the other four,
             # so an empty body is a 400 naming the field. `patch` below stays
             # partial, which is what PATCH means.
-            serializer = CommentSerializer(obj, data=data)
+            serializer = CommentSerializer(obj, data=data, context={"request": request})
             if serializer.is_valid():
                 serializer.save()
                 return Response(
@@ -1024,7 +1028,9 @@ class AccountCommentView(APIView):
         obj = self.get_object(pk)
         assert_generic_patient_access(request.profile, obj)
         if is_org_admin(request.profile) or request.profile == obj.commented_by:
-            serializer = CommentSerializer(obj, data=data, partial=True)
+            serializer = CommentSerializer(
+                obj, data=data, partial=True, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(

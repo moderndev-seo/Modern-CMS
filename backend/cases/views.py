@@ -30,7 +30,7 @@ from cases.access import (
     is_org_admin,
     visible_cases_qs,
 )
-from cases.merge_views import can_merge_case
+from cases.merge_views import can_merge_case, mergeable_cases_qs
 from cases.models import Case, ReopenPolicy, Solution
 from cases.models import EmailMessage as _EmailMessageModel  # noqa: F401  (used below)
 from cases.serializer import (
@@ -716,6 +716,15 @@ class CaseDetailView(APIView):
             if sources
             else set()
         )
+        mergeable = (
+            set(
+                mergeable_cases_qs(request.profile)
+                .filter(id__in=[src.id for src in sources])
+                .values_list("id", flat=True)
+            )
+            if can_merge and sources
+            else set()
+        )
         merged_from = []
         for src in sources:
             restricted = src.id not in readable
@@ -725,15 +734,19 @@ class CaseDetailView(APIView):
                     "name": None if restricted else src.name,
                     "merged_at": src.merged_at,
                     "restricted": restricted,
-                    "can_unmerge": can_merge and can_merge_case(request.profile, src),
+                    "can_unmerge": src.id in mergeable,
                 }
             )
 
         context.update(
             {
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": CommentSerializer(public_comments, many=True).data,
-                "internal_notes": CommentSerializer(internal_notes, many=True).data,
+                "comments": CommentSerializer(
+                    public_comments, many=True, context={"request": request}
+                ).data,
+                "internal_notes": CommentSerializer(
+                    internal_notes, many=True, context={"request": request}
+                ).data,
                 # Same people as `cases_obj.contacts`, so the same fields.
                 "contacts": ContactLinkSerializer(
                     self.cases.contacts.all(),
@@ -831,10 +844,14 @@ class CaseDetailView(APIView):
                 ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
                 "comments": CommentSerializer(
-                    comments_qs.filter(is_internal=False), many=True
+                    comments_qs.filter(is_internal=False),
+                    many=True,
+                    context={"request": request},
                 ).data,
                 "internal_notes": CommentSerializer(
-                    comments_qs.filter(is_internal=True), many=True
+                    comments_qs.filter(is_internal=True),
+                    many=True,
+                    context={"request": request},
                 ).data,
             }
         )
@@ -994,7 +1011,9 @@ class CaseCommentView(APIView):
             # comment when the real answer is that the field is required.
             # `comment` is a non-blank CharField, so the serializer already
             # answers that with a 400 naming the field.
-            serializer = CommentSerializer(obj, data=params)
+            serializer = CommentSerializer(
+                obj, data=params, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(
@@ -1034,7 +1053,9 @@ class CaseCommentView(APIView):
         obj = self.get_object(pk)
         assert_generic_patient_access(request.profile, obj)
         if is_org_admin(request.profile) or request.profile == obj.commented_by:
-            serializer = CommentSerializer(obj, data=params, partial=True)
+            serializer = CommentSerializer(
+                obj, data=params, partial=True, context={"request": request}
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(

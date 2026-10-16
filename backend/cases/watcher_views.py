@@ -21,7 +21,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cases.access import visible_cases_qs as _visible_cases_qs
-from cases.models import Case, CaseWatcher
+from cases.models import CaseWatcher
 from common.permissions import HasOrgContext
 
 
@@ -99,7 +99,8 @@ class WatchingListView(APIView):
         from cases.views import apply_case_list_filters
 
         cases = (
-            Case.objects.filter(org=request.profile.org, watchers=request.profile)
+            _visible_cases_qs(request.profile)
+            .filter(watchers=request.profile)
             .order_by("-created_at")
             .distinct()
         )

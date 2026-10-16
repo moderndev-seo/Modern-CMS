@@ -778,7 +778,7 @@ class SalesGoal(BaseModel):
         return result
 
     @classmethod
-    def attach_progress(cls, goals):
+    def attach_progress(cls, goals, *, profile=None):
         """Populate every goal's progress cache in a fixed number of queries.
 
         Serializing a list called `compute_progress()` once per goal, so a page
@@ -790,7 +790,12 @@ class SalesGoal(BaseModel):
         Returns the list it was given, so callers can wrap a queryset inline.
         """
         goals = list(goals)
-        pending = [g for g in goals if not hasattr(g, "_cached_progress")]
+        # Request-bound callers must not reuse a cache computed for another reader.
+        pending = [
+            g
+            for g in goals
+            if profile is not None or not hasattr(g, "_cached_progress")
+        ]
         if not pending:
             return goals
 
@@ -817,15 +822,20 @@ class SalesGoal(BaseModel):
         for org in Org.objects.filter(id__in={g.org_id for g in deal_goals}):
             # One row per (deal, assignee); an unassigned deal still arrives
             # once, with a null profile, because an org-wide goal counts it.
+            opps = Opportunity.objects.filter(
+                stage_kind_q(WON),
+                org=org,
+                closed_on__gte=period_start,
+                closed_on__lte=period_end,
+            )
+            if profile is not None:
+                from contacts.access import patient_link_queryset
+
+                # Goal visibility does not confer access to protected deal values.
+                # Keep the existing team/org aggregation for unrelated CRM deals.
+                opps = patient_link_queryset(opps, profile, financial=True)
             deals.extend(
-                Opportunity.objects.filter(
-                    stage_kind_q(WON),
-                    org=org,
-                    closed_on__gte=period_start,
-                    closed_on__lte=period_end,
-                )
-                .annotate(counted_in=deal_currency(org))
-                .values_list(
+                opps.annotate(counted_in=deal_currency(org)).values_list(
                     "id",
                     "org_id",
                     "closed_on",

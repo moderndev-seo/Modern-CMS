@@ -126,10 +126,12 @@ def assert_case_delete_access(profile, case):
     handed to, which is a reason to let them work the ticket and not a reason
     to let them erase it.
     """
-    if not has_patient_link_access(profile, case):
+    if not has_case_delete_access(profile, case):
         raise PermissionDenied(_DENIED)
-    if is_org_admin(profile):
-        return
-    if profile.user_id == case.created_by_id:
-        return
-    raise PermissionDenied(_DENIED)
+
+
+def has_case_delete_access(profile, case):
+    """The individual and bulk delete rule, including current patient access."""
+    return has_patient_link_access(profile, case) and (
+        is_org_admin(profile) or profile.user_id == case.created_by_id
+    )

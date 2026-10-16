@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from cases.access import has_case_write_access, is_org_admin
+from cases.access import has_case_delete_access, has_case_write_access
 from cases.models import Case
 from cases.workflow import DUPLICATE_BY_MERGE_ONLY
 from common.models import Activity, Profile, Tags
@@ -195,18 +195,15 @@ class BulkDeleteCasesView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         org = request.profile.org
-        admin = is_org_admin(request.profile)
         results = []
         deletable = []
         # Deleting is admin-or-creator only (`assert_case_delete_access`); an
         # assignee may work a ticket but not erase it.
-        for row in Case.objects.filter(pk__in=ids, org=org, is_active=True).values(
-            "id", "name", "created_by_id"
-        ):
-            if admin or row["created_by_id"] == request.profile.user_id:
-                deletable.append(row)
+        for case in Case.objects.filter(pk__in=ids, org=org, is_active=True):
+            if has_case_delete_access(request.profile, case):
+                deletable.append({"id": case.id, "name": case.name})
             else:
-                results.append({"id": str(row["id"]), "status": "no_access"})
+                results.append({"id": str(case.id), "status": "no_access"})
 
         deleted_count = 0
         if deletable:

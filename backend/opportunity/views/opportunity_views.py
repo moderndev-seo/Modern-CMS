@@ -648,7 +648,9 @@ class OpportunityDetailView(APIView):
         ).order_by("-id")
         context.update(
             {
-                "comments": CommentSerializer(comments, many=True).data,
+                "comments": CommentSerializer(
+                    comments, many=True, context={"request": request}
+                ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
                 # Only the people the viewer may open: each row links to the
                 # contact's own page, and opening the deal is not access to
@@ -759,7 +761,9 @@ class OpportunityDetailView(APIView):
                     self.opportunity_obj, context={"request": self.request}
                 ).data,
                 "attachments": AttachmentsSerializer(attachments, many=True).data,
-                "comments": CommentSerializer(comments, many=True).data,
+                "comments": CommentSerializer(
+                    comments, many=True, context={"request": request}
+                ).data,
             }
         )
         return Response(context)

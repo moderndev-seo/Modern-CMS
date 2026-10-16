@@ -1,5 +1,7 @@
 # Final remediation release review
 
+October 15 review follow-up: the four automated PR findings and verified adjacent authorization paths have been corrected and passed final local regression. The snapshot below is historical and does not validate this new diff. See [PR #1 review remediation](pr1-review-remediation.md) for current results and gates.
+
 Publication update: the owner has authorized a feature-branch commit/push, PR and hosted validation. Historical local-review status below records what had happened at that time; see [current handoff](PROJECT_STATE.md) for the latest authorization. Merge, deployment and next-phase implementation remain prohibited.
 
 Status: **Ready with documented nonblocking limitations — October 14, 2026**. Local review and regression verification are complete; hosted checks and independent review remain PR gates. All changes remain uncommitted on `codex/patient-authorization-ci`, based on public main `11e6d59a0ef79e6cefe6d5fe1a71859099557961`. No publication, deployment, live integration or repository administration changes are authorized.
