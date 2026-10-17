@@ -1,3 +1,19 @@
+# Architecture documentation publication — October 16, 2026
+
+> **Current publication status — October 16, 2026:** Design 0.2.0 and bounded A01–A10 are approved for fictional, isolated Phase 2A; Group B/C remain pending. The owner confirmed independent human review without outstanding blockers and authorized security PR #1 to merge; GitHub records merge `1e00ae5d175e0ace627b2dc5fc68e25a73cb41dd`. All seven checks passed on reviewed head `81ecc87672e35a00d45a9c40b2f83d578a364f2a`. This separate documentation PR is authorized for publication after checks. Phase 2A remains unimplemented and gated on documentation review, separate owner merge approval and actual merge. No live connections, deployment or Phase 2B–E implementation. Earlier gate/status snapshots below are historical, not current instructions.
+
+Objective: close the loop from marketing introduction to attributable collected revenue without inventing identity, source or cash evidence. Read [the universal journey index](universal-journey/README.md), [recorded A01–A10 approvals](universal-journey/J-product-decisions.md#recorded-foundation-approvals-october-14-2026) and [Phase 2A specification](universal-journey/I-roadmap.md#d-phase-2a-implementation-specification). These distinguish existing CRM behavior from proposed integration contracts, later policy decisions and unexecuted acceptance scenarios.
+
+Publication uses `codex/universal-journey-docs` from merged public main. Exactly 15 allowlisted Markdown paths; no application code, migration, lockfile or workflow change. Preserve the latest security report below rather than replacing it with the older overlay. The original checkout and private architecture packages remain preserved and excluded. Owner review/merge confirmation was received in the project conversation; no formal GitHub APPROVED review is claimed.
+
+Validation for this documentation increment is recorded in its PR summary: strict documentation build, existing publication guards, manifest/content/link checks and whitespace. Application/security/browser tests are not newly claimed for a documentation change. The seven security-PR checks at the reviewed head remain historical implementation evidence. No saved/demo/production database changes or live services.
+
+Next: obtain independent documentation review and separate owner merge approval. After actual documentation merge, the already-authorized fictional Phase 2A may implement only the bounded registry, restricted service identity, credential lifecycle, metadata probe and audit specification. Event ingestion and workers belong to later separately authorized increments. Group B/C remain pending. Do not request A01–A10 approval again or treat documentation publication as production readiness.
+
+Historical security and project records follow; current authorization above supersedes older stop/publication statements.
+
+---
+
 ## PR #1 review corrections — October 16, 2026
 
 Objective: finish the four security-review findings and verified adjacent bypasses on existing `codex/patient-authorization-ci`, then stop for independent human review and separate owner merge approval. The owner's latest request explicitly authorizes targeted fixes, tests, commits/pushes and four review-thread replies. No merge, deployment, repository administration, saved database changes or Phase 2A is authorized.
