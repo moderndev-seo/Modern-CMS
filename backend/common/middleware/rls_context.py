@@ -42,6 +42,11 @@ class SetOrgContext:
         self.get_response = get_response
 
     def __call__(self, request):
+        if getattr(request, "_integration_verified", False):
+            return self.get_response(
+                request
+            )  # Verified transaction owns LOCAL context.
+
         # Set org context before processing request
         self._set_org_context(request)
 
@@ -217,6 +222,11 @@ class RequireOrgContext:
         self.get_response = get_response
 
     def __call__(self, request):
+        if getattr(request, "_integration_verified", False):
+            return self.get_response(
+                request
+            )  # Verified transaction owns LOCAL context.
+
         # Check if path requires org context
         if not self._is_exempt(request.path):
             # Skip check for URLs that don't resolve (let Django return 404)

@@ -28,6 +28,7 @@ app_name = "crm"
 
 urlpatterns = [
     path("api/patients/", include("patients.urls")),
+    path("api/integrations/v1/", include("integrations.urls")),
     url(
         r"^healthz/$",
         TemplateView.as_view(template_name="healthz.html"),

@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     "webforms",
     "webhooks",
     "patients",
+    "integrations",
     # "teams",  # Merged into common app
 ]
 
@@ -94,6 +95,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "crum.CurrentRequestUserMiddleware",
+    "integrations.middleware.IntegrationContext",
     "common.middleware.get_company.GetProfileAndOrg",
     "common.middleware.rls_context.RequireOrgContext",  # RLS: Enforce org context + set PostgreSQL session variable
     # Last, so it queues the request's webhook events while crum still holds
@@ -563,3 +565,16 @@ if not IS_DEV_ENV:
 # nothing: the schema is served from whatever host serves the app.
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+
+# Fictional Phase 2A is opt-in; no saved organization is implicitly enabled.
+INTEGRATION_FOUNDATION_ENABLED = (
+    os.environ.get("INTEGRATION_FOUNDATION_ENABLED", "false").lower() == "true"
+)
+INTEGRATION_TEST_ORGS = tuple(
+    value.strip()
+    for value in os.environ.get("INTEGRATION_TEST_ORGS", "").split(",")
+    if value.strip()
+)
+INTEGRATION_AUDIENCE = os.environ.get(
+    "INTEGRATION_AUDIENCE", "modern-practice-fictional-local"
+)

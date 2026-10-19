@@ -56,6 +56,9 @@ class GetProfileAndOrg:
             timezone.deactivate()
 
     def process_request(self, request):
+        if getattr(request, "_integration_verified", False):
+            return None
+
         # Skip JWT validation for authentication endpoints that don't need org context
         auth_skip_paths = [
             "/api/auth/google/",

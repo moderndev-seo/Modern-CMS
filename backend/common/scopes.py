@@ -67,6 +67,7 @@ API_RESOURCES = frozenset(
         "dashboard",
         "documents",
         "invoices",
+        "integrations",
         "leads",
         "macros",
         "notifications",
@@ -120,6 +121,7 @@ SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 # Read or write access to a credential, from a credential. See the module
 # docstring: no scope opens these, and neither does an empty scope list.
 CREDENTIAL_PATHS = (
+    "/api/integrations/",
     "/api/profile/tokens/",
     "/api/org/tokens/",
     "/api/org/api-key/",
