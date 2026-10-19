@@ -1,3 +1,13 @@
+# Phase 2A PR #3 published — October 19, 2026
+
+The owner explicitly authorized publication. The verified implementation is now in [PR #3](https://github.com/moderndev-seo/Modern-CMS/pull/3), branch `codex/integration-foundation-2a`, targeting main. Implementation commit: `8cf33a7ab7d47b12f003e56e5ce78dc8d80da12a`, based on approved architecture merge `100ae08cabd4b6bb11d2332fb67ffdb569fd4ba8`. Its tree `0e3bf5ce33f43edc005be7c1fa222bf7162218a1` exactly matched the verified staged 28-file change. This follow-up updates continuity only.
+
+Publication used the connected GitHub API with exact tree comparison; the public clone was fetched and synchronized without resetting files. Original private history/artifacts and saved demo records were preserved. The active clone is `output/remediation/Modern-CMS`; inspect current Git status before continuing.
+
+Hosted CI and CodeQL have been triggered. Their final results must be read against the latest PR head, not inferred from local checks or a previous commit. The PR description records the exact current head and observed hosted results. Local evidence remains 357 security passes/no skips and the validation report below. Independent technical review and separate owner approval are required before merge. No merge, deployment, live provider connection or Phase 2B–E is authorized. Earlier pending-publication statements are historical and superseded.
+
+---
+
 # Phase 2A publication authorized — October 19, 2026
 
 The owner explicitly approved committing/pushing the verified `codex/integration-foundation-2a` branch and opening its review pull request. This supersedes the pending publication-permission statements below. No merge, deployment, live connection or Phase 2B–E is authorized. Independent technical review and separate owner merge approval remain required.
