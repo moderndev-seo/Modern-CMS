@@ -43,6 +43,12 @@ if __name__ == "__main__":
     assert patients and patients <= security, (
         "Patient tests escaped the policy-bound PostgreSQL job"
     )
+    integrations = {
+        test for test in all_tests if test.startswith("integrations/tests/")
+    }
+    assert integrations and integrations <= security, (
+        "Integration tests escaped restricted PostgreSQL"
+    )
     legacy_security = {
         test
         for test in all_tests
@@ -57,5 +63,5 @@ if __name__ == "__main__":
         "Legacy tenant/pool checks escaped the restricted PostgreSQL job"
     )
     print(
-        f"{len(all_tests)} collected = {len(sqlite)} SQLite-compatible + {len(security)} PostgreSQL security; all {len(patients)} patient cases routed to security."
+        f"{len(all_tests)} collected = {len(sqlite)} SQLite-compatible + {len(security)} PostgreSQL security; all {len(patients)} patient cases and {len(integrations)} integration cases routed to security."
     )

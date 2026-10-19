@@ -1,3 +1,69 @@
+# Phase 2A publication authorized — October 19, 2026
+
+The owner explicitly approved committing/pushing the verified `codex/integration-foundation-2a` branch and opening its review pull request. This supersedes the pending publication-permission statements below. No merge, deployment, live connection or Phase 2B–E is authorized. Independent technical review and separate owner merge approval remain required.
+
+Before publication, remote main was verified at `100ae08cabd4b6bb11d2332fb67ffdb569fd4ba8`; the feature branch did not exist remotely. Publish only the reviewed public-clone source/documentation tree, never the original checkout/history or private artifacts. The PR will record the exact published commit and hosted results. Local validation remains the 357-pass security result and evidence documented below; hosted CI is not yet claimed.
+
+---
+
+# Phase 2A local review candidate — October 19, 2026
+
+Local implementation and acceptance verification are ready for independent review on uncommitted `codex/integration-foundation-2a`, based on merged architecture `100ae08cabd4b6bb11d2332fb67ffdb569fd4ba8`. No Phase 2A commit, push, PR or merge has occurred. Honor the owner's explicit publication-approval rule; never publish original private history. Independent review and separate merge approval remain gates, and this is not production readiness.
+
+Completed the final boundary work: supplied organization selectors in body/query are rejected with 403 before tenant context; matching selectors are not silently ignored. Failure monitoring uses server-generated opaque IDs and five fixed, saturating process-local counters, with no caller values/headers/tokens logged. Validation errors no longer echo values. Verified signing-key fallback cannot bypass revocation, empty-context reads reveal no integration metadata, disabled practices fail closed, exact expiry/retirement boundaries, and revocation wins against waiting probe/issuance. Credential revocation retries now retain an already-recorded retirement timestamp. These are implementation choices within Architecture 0.2.0/A01–A10; no schema extension beyond the approved four tables.
+
+Final full restricted PostgreSQL security run: **357 passed**, zero failures/skips, including **76 integration cases**, 6,294 compatibility cases deselected, 351 inherited warnings. Pytest reported 14,654.27 seconds across the overnight interruption; this is not a performance benchmark. Final lint and 840-file formatting pass. See `phase2a-validation.md` for the acceptance-family map, exact evidence, corrected failures and limitations; `phase2a-foundation.md` is the operator guide. Final routing passes: 6,651 total = 6,294 compatibility + 357 security; all 254 patient and 76 integration cases are in security. Migration drift: no changes. Strict docs/reference guards: 8 passed, one inherited warning. Final wheel/source build and installed services/monitoring/seven-template startup pass. Whitespace and 28-path private-artifact/private-key-block checks pass. A concrete review summary is prepared; private artifacts are excluded from publication.
+
+Earlier compatibility evidence remains explicit: PostgreSQL 6,293 passed plus one missing-environment-documentation failure; SQLite 6,284 passed/nine skips/that same failure, 89.32% coverage. The documentation correction passed 8 PostgreSQL checks and 6 SQLite reference checks. Those complete compatibility runs preceded the final integration-only selector/monitoring/redaction changes; the final restricted security suite includes the changed boundary. No additional legacy handler, frontend or schema change was made in this last increment. Installed-package, strict docs, upgrade fingerprints, normal isolated database restart and feature-disable rehearsals passed as detailed in the report. No browser check is required for this API-only phase; none is claimed.
+
+Next: obtain explicit permission to commit/push this verified feature branch and open a review PR, inspect current remote main/history before publication, then run exact-head hosted CI and independent review. Do not merge or start Phase 2B–E without the required approvals. No live providers, production deployment, event receiver, worker or patient/cash projection is included. Counters are process-local, not production telemetry. Preserve both the original dirty checkout and persistent fictional rehearsal volume; saved/demo data is unchanged.
+
+---
+
+# Phase 2A persistence rehearsal — October 18, 2026
+
+Continued local validation on the same uncommitted `codex/integration-foundation-2a` branch. A dedicated persistent container `mp-phase2a-rehearsal-db` on the isolated test network, using volume `mp-phase2a-rehearsal-data` and no published port, was created because the existing test database uses tmpfs. Do not delete its volume. Both original demo and existing test storage were preserved.
+
+Verified the pre-integration migration baseline with two fictional TEST practices, then applied the integration migrations under NOSUPERUSER/NOBYPASSRLS. All-field fingerprints of Org/Profile/User/Contact/Patient/Receipt/JourneyEvent/MarketingSpend stayed identical. All four new tables force RLS. A normal restart of only the rehearsal database preserved those fingerprints, integration metadata/audits and the previously issued credential's successful probe. Disabling the feature blocked integration endpoints while existing patient reads remained available. No saved/demo/production database was migrated.
+
+Wheel and source builds passed; installed-wheel startup outside the checkout, integration imports and seven packaged templates passed. Both strict documentation/publication guards passed (2 tests, one inherited warning). Final security: 333 passed, zero failures/skips. PostgreSQL compatibility: 6,293 passed/one documentation failure. SQLite: 6,284 passed/nine skips/that same documentation failure, 89.32% coverage. Documented all three missing integration environment settings; affected checks then passed (8 PostgreSQL documentation/reference checks; 6 SQLite reference checks). No application regression was reported, and full suites were not repeated after the documentation-only correction. Exact warnings, durations and intermediate failures are in `phase2a-validation.md`; private logs are in ignored `output/remediation/phase2a/`. Rehearsal script and fictional credential state are private test artifacts outside the public clone.
+
+Still pending: final acceptance matrix review, including the specified 403 behavior for conflicting organization selectors in request bodies and bounded authentication-failure monitoring/correlation IDs, plus any additional cases exposed by that review and independent review. Green existing tests do not establish untested requirements. No commit, push, remote change, merge, deployment or live integration occurred. Continue Phase 2A only; honor explicit publication approval rules.
+
+---
+
+# Phase 2A concurrency and error-boundary increment — October 18, 2026
+
+Continued on the same uncommitted `codex/integration-foundation-2a` public clone. Added separate-connection/real-commit tests for concurrent issuance and rotation (one 201 and one stale-revision 409), a probe blocked until revocation commits (then 401), context setup rollback, and reset-failure connection discard with clean subsequent context. A fictional-secret canary exposed unexpected view exceptions reaching Django traceback logs. A new integration-only exception boundary rolls back, logs a fixed message without exception/request content, and returns generic 503; the canary now passes.
+
+Final focused run: **52 passed, zero skips/failures**, 49 inherited warnings, 14.17 seconds. Backend lint and 839-file formatting pass. Stable routing check passes: 6,627 total = 6,294 compatibility + 333 security, including all 254 patient and 52 integration cases. Whitespace check passes. See active-clone `docs/modern-practice/phase2a-validation.md` for intermediate failures and exact scope. Private evidence is in original ignored `output/remediation/phase2a/concurrency-final.log` and related logs. The earlier 326-test broader security pass remains historical; it was not rerun in this increment.
+
+Remaining: complete requirement-by-requirement acceptance review, controlled migration upgrade and existing-data fingerprint preservation, normal isolated database restart and feature-disable rehearsals, final broad security/compatibility/package/docs checks, and independent review. Current tests cover selected concurrency/context/logging cases, not universal failure simulation. No live services, saved/demo data changes, commit, push or merge. Preserve local changes and follow the explicit-approval publication rule. Next work stays in Phase 2A; Phase 2B–E is not started.
+
+---
+
+# Phase 2A validation increment — October 18, 2026
+
+Active work remains uncommitted in the isolated public clone on `codex/integration-foundation-2a`, based on `100ae08cabd4b6bb11d2332fb67ffdb569fd4ba8`. Fixed deferred audit checks running after tenant-context restoration, failed-SQL cleanup, bounded server-error rollback and malformed-command validation. Added cross-practice context, unaudited-write and actual commit/reconnect regressions. Four additive metadata tables remain the approved Phase 2A design; no new patient/cash schema or live service work.
+
+Verified: 46 focused integration tests passed; broader restricted PostgreSQL security suite passed 326 tests before the final reconnect case was added (that additional case passed in the final focused run). No failures/skips in those successful runs. Routing: 6,621 = 6,294 compatibility + 327 security; all 254 patient and 46 integration tests are in security. Backend lint, 839-file formatting, migration drift, Django system and whitespace checks passed. See `docs/modern-practice/phase2a-validation.md` in the active clone for exact commands, warnings, intermediate failures and limitations. Private logs persist outside that clone in original ignored `output/remediation/phase2a/`.
+
+Not complete: concurrent multi-connection lifecycle acceptance, context-failure/connection-discard and secret-log checks, controlled upgrade/baseline preservation, container restart and feature-disable rehearsals, full compatibility/package/docs checks and independent review. A database reconnect is not a container restart test. Next work is these bounded Phase 2A acceptance gaps, not event ingestion or Phase 2B–E. No commit/push/remote change/merge in this increment; honor the owner's explicit-approval publication rule. Phase 2A merge requires separate approval.
+
+Only the isolated test database and runner were restarted. The disposable database was empty; its restricted test role and migrated schema were recreated. Original saved/demo databases were not migrated or changed; original demo containers were observed stopped. Preserve the original dirty checkout and this uncommitted clone. Earlier snapshots below are historical.
+
+---
+
+# Phase 2A implementation in progress — October 17, 2026
+
+The owner approved the corrected PR #2, explicitly authorized its merge and instructed proceeding. GitHub merged it as `100ae08cabd4b6bb11d2332fb67ffdb569fd4ba8`, from reviewed head `c7b97da858910d95a5b168d3c79637faab4125f7`. Both security and architecture merge prerequisites are satisfied. Active implementation is on `codex/integration-foundation-2a` in the isolated public clone. Bounded fictional Phase 2A implementation, tests and verified feature-branch publication are authorized; its merge still requires separate approval.
+
+Work is uncommitted and incomplete: four additive metadata models, immutable/RLS guards, fixed fictional manifests, signed-locator service authentication, admin metadata/credential lifecycle and probe routes, with first focused tests in progress. No completed acceptance claim yet. Do not apply migrations to saved/demo/production databases. No live services, event ingestion, workers, patient/cash effects or Phase 2B–E. Preserve original/private work. The corrected retirement boundary is part of the implementation contract.
+
+Earlier pending documentation approval/merge statements below are historical.
+
+---
+
 # Architecture documentation publication — October 16, 2026
 
 > **Current publication status — October 16, 2026:** Design 0.2.0 and bounded A01–A10 are approved for fictional, isolated Phase 2A; Group B/C remain pending. The owner confirmed independent human review without outstanding blockers and authorized security PR #1 to merge; GitHub records merge `1e00ae5d175e0ace627b2dc5fc68e25a73cb41dd`. All seven checks passed on reviewed head `81ecc87672e35a00d45a9c40b2f83d578a364f2a`. This separate documentation PR is authorized for publication after checks. Phase 2A remains unimplemented and gated on documentation review, separate owner merge approval and actual merge. No live connections, deployment or Phase 2B–E implementation. Earlier gate/status snapshots below are historical, not current instructions.

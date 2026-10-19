@@ -129,6 +129,16 @@ Pooling uses psycopg 3's `psycopg_pool` through Django's PostgreSQL backend. It 
 | `GOOGLE_CLIENT_ID` | *(empty)* | No, leaving it blank disables Google sign-in | OAuth client ID sent to Google's token endpoint and used as the expected audience when verifying a mobile ID token. See [Google OAuth](../self-hosting/google-oauth.md#backend-configuration). |
 | `GOOGLE_CLIENT_SECRET` | *(empty)* | No, leaving it blank disables Google sign-in | OAuth client secret, alongside `GOOGLE_CLIENT_ID` above. |
 
+### Fictional integration foundation
+
+Phase 2A is an opt-in testing foundation, not a live provider connection. Keep it disabled for saved practices and production deployments pending release approval. Enabling it does not create a credential or allow event ingestion.
+
+| Variable | Default | Required? | Purpose |
+| --- | --- | --- | --- |
+| `INTEGRATION_FOUNDATION_ENABLED` | `false` | No | Only case-insensitive `true` enables the fictional integration routes; the TEST organization allowlist must also match. |
+| `INTEGRATION_TEST_ORGS` | *(empty)* | Only for isolated fictional testing | Comma-separated organization UUIDs explicitly allowed to use the foundation. Whitespace is trimmed. An empty list enables no practice; there is no wildcard. |
+| `INTEGRATION_AUDIENCE` | `modern-practice-fictional-local` | Set a distinct value per isolated environment | Nonsecret audience embedded in signed service credentials and checked on every authentication. Changing it invalidates existing credentials for that environment. Live audience configuration remains deferred. |
+
 ### Docker bootstrap (not read by `crm/settings.py`)
 
 | Variable | Default | Required | Purpose |

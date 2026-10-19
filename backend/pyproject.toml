@@ -142,6 +142,7 @@ packages = [
     "webforms",
     "webhooks",
     "patients",
+    "integrations",
 ]
 
 [tool.hatch.build.targets.sdist]
@@ -161,6 +162,7 @@ include = [
     "webforms/",
     "webhooks/",
     "patients/",
+    "integrations/",
     "static/",
     "manage.py",
     ".env.example",

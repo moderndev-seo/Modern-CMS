@@ -53,7 +53,9 @@ def pytest_collection_modifyitems(items):
 
     patient_tests = Path(__file__).parent / "patients" / "tests"
     for item in items:
-        if item.path.is_relative_to(patient_tests):
+        if item.path.is_relative_to(patient_tests) or item.path.is_relative_to(
+            Path(__file__).parent / "integrations" / "tests"
+        ):
             item.add_marker(pytest.mark.postgres_only)
 
 
