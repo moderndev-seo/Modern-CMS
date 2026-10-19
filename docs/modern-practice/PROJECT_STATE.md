@@ -1,3 +1,11 @@
+# PR #3 pre-merge review corrections — October 19, 2026
+
+The owner authorized merge and continuation. Pre-merge inspection found two unresolved automated review findings on the implementation: an unaudited successful repeat terminal revocation and a 201 response when reusing an existing namespace. Merge is deferred while the corrected head receives checks and review; the earlier green head is not evidence for the new changes.
+
+Both findings are corrected without schema changes. New request IDs against terminally revoked connections now return 409; original successful command retries still replay 200 with unchanged revision, audit and credential revocation facts. Namespace reuse returns 200, preserves one namespace, audits the fresh command and rejects conflicting request-ID reuse. Two focused regressions were added. Initial focused run: 77 passed/one failure caused by a new test account lacking the required test_ prefix; fixed the fixture. Final full restricted PostgreSQL suite: 359 passed, zero skips/failures, 6,294 deselected, 353 inherited warnings, 177.82 seconds. Integration coverage is now 78 cases. Ruff lint, 15-file integration formatting and whitespace checks passed. Hosted checks must be read on the correction commit; see PR #3 description for its exact SHA/results.
+
+Existing publication authorization is used only to update PR #3 with these bounded corrections. Review must cover the corrected head before merge; do not present the prior owner approval as review of subsequently changed code. Next implementation remains Phase 2B durable acceptance after actual merge and scoped continuation. No Phase 2B schema or code, live connections, deployment, original demo changes or repository administration changes in this increment. Group B/C business policies remain pending.
+
 # Phase 2A PR #3 published — October 19, 2026
 
 The owner explicitly authorized publication. The verified implementation is now in [PR #3](https://github.com/moderndev-seo/Modern-CMS/pull/3), branch `codex/integration-foundation-2a`, targeting main. Implementation commit: `8cf33a7ab7d47b12f003e56e5ce78dc8d80da12a`, based on approved architecture merge `100ae08cabd4b6bb11d2332fb67ffdb569fd4ba8`. Its tree `0e3bf5ce33f43edc005be7c1fa222bf7162218a1` exactly matched the verified staged 28-file change. This follow-up updates continuity only.

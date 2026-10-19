@@ -115,6 +115,7 @@ def command(profile, kind, data, connection_id=None, credential_id=None):
         key = None
         previous = None
         details = {}
+        created = False
         reason = data.get("reason_code", "fixture_setup")
         if connection_id:
             conn = (
@@ -129,7 +130,7 @@ def command(profile, kind, data, connection_id=None, credential_id=None):
             previous = conn.revision
             namespace = conn.namespace
         if kind == "namespace":
-            namespace, _ = Namespace.objects.get_or_create(
+            namespace, created = Namespace.objects.get_or_create(
                 org=profile.org,
                 provider_key=data["provider_key"],
                 account_key=data["account_key"],
@@ -176,7 +177,9 @@ def command(profile, kind, data, connection_id=None, credential_id=None):
                 "operator_revoke",
             ):
                 if conn.status == "revoked":
-                    return connection_data(conn), 200
+                    raise Conflict(
+                        "Connection already revoked; retry original command."
+                    )
                 conn.revoked_at = now
                 for old in Credential.objects.filter(
                     connection=conn, revoked_at__isnull=True
@@ -333,4 +336,4 @@ def command(profile, kind, data, connection_id=None, credential_id=None):
         result = replay_result(audit)
         if kind == "issue":
             result.update(secret_available=True, credential=raw)
-        return result, 201 if kind in ("namespace", "connection", "issue") else 200
+        return result, (201 if kind in ("connection", "issue") or created else 200)

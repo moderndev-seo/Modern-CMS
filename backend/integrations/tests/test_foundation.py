@@ -1002,3 +1002,59 @@ def test_revocation_retry_preserves_existing_retirement_fact(admin_client, regis
     assert results[0].json() == results[1].json()
     assert results[0].json()["retire_at"] == cutoff
     assert results[0].json()["revoked_at"] is not None
+
+
+def test_existing_namespace_reuse_is_audited_and_returns_200(admin_client, registry):
+    namespace = Connection.objects.get(id=registry).namespace
+    count = Namespace.objects.count()
+    request_id = str(uuid4())
+    data = dict(
+        request_id=request_id,
+        provider_key=namespace.provider_key,
+        account_key=namespace.account_key,
+    )
+    first = post(admin_client, "namespaces/", **data)
+    replay = post(admin_client, "namespaces/", **data)
+    assert first.status_code == replay.status_code == 200
+    assert first.json() == replay.json()
+    assert first.json()["id"] == str(namespace.id)
+    assert Namespace.objects.count() == count
+    assert Audit.objects.filter(request_id=request_id).count() == 1
+    assert (
+        post(
+            admin_client, "namespaces/", **{**data, "account_key": "test_other_account"}
+        ).status_code
+        == 409
+    )
+
+
+def test_terminal_connection_revocation_rejects_new_command(admin_client, registry):
+    key = issue(admin_client, registry)
+    path = f"connections/{registry}/state/"
+    request_id = str(uuid4())
+    data = dict(
+        request_id=request_id,
+        expected_revision=2,
+        target="revoked",
+        reason_code="operator_revoke",
+    )
+    original = post(admin_client, path, **data)
+    assert original.status_code == 200
+    revision = Connection.objects.get(id=registry).revision
+    audit_count = Audit.objects.count()
+    key_revoked_at = Credential.objects.get(id=key["id"]).revoked_at
+    rejected_id = str(uuid4())
+    rejected = post(
+        admin_client,
+        path,
+        **{**data, "request_id": rejected_id, "expected_revision": revision},
+    )
+    assert rejected.status_code == 409
+    assert not Audit.objects.filter(request_id=rejected_id).exists()
+    assert Connection.objects.get(id=registry).revision == revision
+    assert Credential.objects.get(id=key["id"]).revoked_at == key_revoked_at
+    replay = post(admin_client, path, **data)
+    assert replay.status_code == 200
+    assert replay.json() == original.json()
+    assert Audit.objects.count() == audit_count
+    assert service(key["credential"]).get(ROOT + "service/probe/").status_code == 401

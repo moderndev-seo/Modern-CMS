@@ -1,6 +1,6 @@
 # Fictional integration foundation — Phase 2A
 
-This API-only foundation is implemented locally and awaiting final review/publication. It does not receive events, connect vendors, create patients, or record money. Keep it disabled for saved practices and production. Frontend/backend ports remain 5181/8000.
+This API-only foundation is published in PR #3 and awaiting review completion/merge. It does not receive events, connect vendors, create patients, or record money. Keep it disabled for saved practices and production. Frontend/backend ports remain 5181/8000.
 
 ## Configuration and identity
 
@@ -27,6 +27,8 @@ All paths below are relative to `/api/integrations/v1/`. Commands require a UUID
 Credential expiry is required and at most 30 days. At most two non-revoked credentials occupy slots, including expired credentials until explicitly revoked. Rotation permits zero overlap or at most 24 hours, never extending the old expiry or an earlier retirement cutoff. The old credential is denied at and after `retire_at`; no background job is needed. Connection revocation revokes every credential. Signing-key verification fallback never bypasses stored revocation.
 
 Issuance returns the raw credential once. An identical command retry returns its recorded nonsecret result without redisclosing or regenerating it. If the response is lost, revoke the orphaned credential and issue with a new request ID. Never put credentials in URLs, documentation, public repositories or screenshots. List/detail responses omit hashes and raw credentials. General namespace lists omit account bindings.
+
+Namespace creation returns 201; reuse of an existing provider/account binding returns 200 and records the new command in audit. Repeating a successful command ID returns its recorded result. A new command ID attempting to revoke an already-revoked connection returns 409 without changing state or recording a successful command; retry the original revocation command to retrieve its result.
 
 ## Failure monitoring
 
