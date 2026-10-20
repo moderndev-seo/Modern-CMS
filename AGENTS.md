@@ -1,6 +1,6 @@
 # Modern Practice CRM continuity
 
-> **Current publication status — October 16, 2026:** Design 0.2.0 and bounded A01–A10 are approved for fictional, isolated Phase 2A; Group B/C remain pending. The owner confirmed independent human review without outstanding blockers and authorized security PR #1 to merge; GitHub records merge `1e00ae5d175e0ace627b2dc5fc68e25a73cb41dd`. All seven checks passed on reviewed head `81ecc87672e35a00d45a9c40b2f83d578a364f2a`. This separate documentation PR is authorized for publication after checks. Phase 2A remains unimplemented and gated on documentation review, separate owner merge approval and actual merge. No live connections, deployment or Phase 2B–E implementation. Earlier gate/status snapshots below are historical, not current instructions.
+> **Current checkpoint — October 20, 2026:** Phase 2B is merged in PR #4 at `c8c96b97716e198b3c3445b83a7ddd2aac97a68b`. All seven pre-merge checks passed on `7afa53cbbf6ee0c652ba13806fb70111319f529b`. Phase 2C is next and has not started. Architecture 0.2.0 and approved A01–A10 remain unchanged; Group B/C remain pending. No deployment or live-provider connection is implied. See PROJECT_STATE for evidence and current scope; older status snapshots below are historical.
 
 Read [the universal journey index](docs/modern-practice/universal-journey/README.md), decision register J and roadmap I before integration work. The accepted architecture is a specification; preserve existing patient permissions and financial safeguards until a separately reviewed implementation changes them.
 
@@ -13,7 +13,15 @@ When resuming project development, read `docs/modern-practice/PROJECT_STATE.md` 
 - Preserve original attribution; later touches must not overwrite it. Collected revenue comes from receipts less refunds, never invoice/deal values. Preserve Unknown attribution and unavailable ROAS when spend is missing.
 - Use fictional, clearly labeled TEST practices for demos and rerunnable seeds. No live advertising, messaging, review or payment connections; no deployment, Git resets or Docker volume deletion.
 - This repository is public. Never publish secrets, real patient data, database exports, internal PDFs/decks, `reference/`, `output/`, or the original local repository's private history.
-- Current owner authorization: publish the separate architecture documentation PR after checks. Security PR #1 is merged. Documentation merge needs separate approval; fictional Phase 2A implementation and verified feature-branch publication are conditionally authorized only after documentation approval/merge. No deployment, live providers, production database or repository administration changes. Inspect remote history before publication; never force-push or publish private history.
+- Current owner authorization: the October 20 “proceed” authorizes this documentation correction and its checked feature-branch publication/PR. Separate approval is required before merge or future publication. This correction does not start Phase 2C, authorize live services, deployment or repository administration. Inspect remote history before publication; never force-push or publish private history.
+
+## Attribution-first scope
+
+The owner's primary objective is to connect observable marketing interactions through inquiry, booking, care and collected revenue, across supported journey sequences. Every proposed increment must explain how it advances acquisition capture, evidence-based identity/journey linking, clinical milestones, receipt/refund reconciliation or attribution reporting. Security and processing work must support that path; defer unrelated CRM expansion.
+
+Phase 2C remains the bounded processing/recovery step in roadmap I, followed by the approved foundation and domain dependencies. The proposed delivery focus is one provider-tested marketing-to-revenue path before broad vendor expansion, not a replacement for the architecture or approval gates. No provider is selected or verified by this rule. Sandbox/provider access needs separately scoped approval under the current no-live-services restriction.
+
+Clearly distinguish seeded demonstrations, fictional adapter conformance and actual provider-tested evidence. Preserve original attribution and subsequent touches separately. Never infer an unobserved Google Search/Business Profile step, a cross-device identity or a missing source; keep gaps and Unknown explicit. Report collected revenue as receipts less refunds and unavailable ROAS when spend is missing. One verified path is an initial proof, not a claim of universal coverage.
 
 ## Maintain the handoff
 

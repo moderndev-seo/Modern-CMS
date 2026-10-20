@@ -1,13 +1,13 @@
 # I — Prioritized implementation roadmap
 
-> **Current publication status — October 16, 2026:** Design 0.2.0 and bounded A01–A10 are approved for fictional, isolated Phase 2A; Group B/C remain pending. The owner confirmed independent human review without outstanding blockers and authorized security PR #1 to merge; GitHub records merge `1e00ae5d175e0ace627b2dc5fc68e25a73cb41dd`. All seven checks passed on reviewed head `81ecc87672e35a00d45a9c40b2f83d578a364f2a`. This separate documentation PR is authorized for publication after checks. Phase 2A remains unimplemented and gated on documentation review, separate owner merge approval and actual merge. No live connections, deployment or Phase 2B–E implementation. Earlier gate/status snapshots below are historical, not current instructions.
+> **Current checkpoint — October 20, 2026:** Phase 2B is merged in PR #4 at `c8c96b97716e198b3c3445b83a7ddd2aac97a68b`. All seven pre-merge checks passed on `7afa53cbbf6ee0c652ba13806fb70111319f529b`. Phase 2C is next and has not started. Architecture 0.2.0 and approved A01–A10 remain unchanged; Group B/C remain pending. No deployment or live-provider connection is implied. See [PROJECT_STATE](../PROJECT_STATE.md) for evidence and current scope; older status snapshots below are historical.
 
 
 > **Historical adoption record 1 — superseded by approval record 2:** The owner accepted design **0.2.0 as the technical baseline**, subject to unresolved policy approvals in J. This supersedes the earlier “final validation draft / technical approval pending” status only. Proposed policy defaults remain pending. Phase 2A planning is authorized; implementation and GitHub publication actions are not. See [adoption and Phase 2A handoff](I-roadmap.md#adoption-and-phase-2a-handoff) and [owner approval register](J-product-decisions.md#group-a-owner-approval-register).
 
 
 Design 0.2.0 · Technical baseline and narrow A01–A10 approved; Group B/C pending.
-**Planning only. PR #1 must receive independent review and merge approval before new application infrastructure is implemented. Separate owner authorization is still required after architecture approval.** Relative complexity covers engineering uncertainty, not calendar commitments. Vendor contracts can dominate elapsed time.
+**Execution checkpoint: phases through 2B are merged; 2C and later remain upcoming. Historical adoption/approval sections below retain their original dates. Separate approvals still govern later implementation, publication and merge.** Relative complexity covers engineering uncertainty, not calendar commitments. Vendor contracts can dominate elapsed time.
 
 ## Phase 0 — Secure foundation (M)
 
