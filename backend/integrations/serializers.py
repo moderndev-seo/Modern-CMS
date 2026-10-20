@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from integrations.manifests import MANIFESTS
+from integrations.manifests import ALL_MANIFESTS
 
 
 class StrictCommand(serializers.Serializer):
@@ -26,7 +26,7 @@ class ConnectionCommand(StrictCommand):
         max_length=100,
         help_text="Operator label only; never enter patient information.",
     )
-    manifest_id = serializers.ChoiceField(choices=list(MANIFESTS))
+    manifest_id = serializers.ChoiceField(choices=list(ALL_MANIFESTS))
 
 
 class RevisionCommand(StrictCommand):
@@ -43,7 +43,9 @@ class StateCommand(RevisionCommand):
 class IssueCommand(RevisionCommand):
     expires_at = serializers.DateTimeField()
     scopes = serializers.ListField(
-        child=serializers.ChoiceField(choices=["integration.probe"]),
+        child=serializers.ChoiceField(
+            choices=["integration.probe", "integration.receive"]
+        ),
         min_length=1,
         max_length=1,
     )

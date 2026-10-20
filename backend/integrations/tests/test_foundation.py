@@ -272,9 +272,17 @@ def test_metadata_does_not_reveal_secret(admin_client, registry):
 def test_db_forced_rls_and_foreign_link(admin_client, registry, org_b, profile_b):
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT relrowsecurity,relforcerowsecurity FROM pg_class WHERE relname LIKE 'mp_integration_%' AND relkind='r'"
+            "SELECT relname,relrowsecurity,relforcerowsecurity FROM pg_class WHERE relname LIKE 'mp_integration_%' AND relkind='r'"
         )
-        assert cursor.fetchall() == [(True, True)] * 4
+        assert set(cursor.fetchall()) == {
+            ("mp_integration_namespace", True, True),
+            ("mp_integration_connection", True, True),
+            ("mp_integration_credential", True, True),
+            ("mp_integration_audit", True, True),
+            ("mp_integration_inbox", True, True),
+            ("mp_integration_pending", True, True),
+            ("mp_integration_delivery_conflict", True, True),
+        }
     with rls_org(org_b):
         assert not Connection.objects.filter(id=registry).exists()
         with pytest.raises(IntegrityError), transaction.atomic():

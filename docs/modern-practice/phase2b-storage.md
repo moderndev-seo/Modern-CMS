@@ -1,0 +1,26 @@
+# Phase 2B storage/input increment
+
+Local, uncommitted work on `codex/integration-durable-acceptance-2b`, based on merged Phase 2A `9b61c4d8d217e8c2e40c2885b2505142749141fb`. This is the first storage/input increment of the [2B plan](phase2b-plan.md), not completed durable acceptance. The subsequent [acceptance increment](phase2b-acceptance.md) adds a separately disabled receiver and explicit grant; statements below describe the earlier storage-only stage. No real or saved-demo database was migrated.
+
+## Requirements and implementation choices
+
+The approved architecture requires immutable delivery evidence, separate pending work, bounded safe replay input, encryption, practice isolation and no patient/cash effects. The local implementation chooses two additive tables:
+
+- `IntegrationEventInbox`: same-practice namespace/connection/credential references, immutable namespace/delivery UUID uniqueness, source manifest digest and authorization generation, distinct semantic/transport hashes, versioned encrypted replay input.
+- `IntegrationPendingWork`: exactly one immutable same-practice marker per receipt. A deferred PostgreSQL constraint refuses a receipt without a marker at transaction validation. This is not a worker lease, attempt or canonical observation.
+
+Both tables force PostgreSQL RLS and deny history updates/deletes. SQL guards reject cross-practice links and malformed evidence shapes. These are storage invariants, **not service authorization**: they do not turn probe credentials into event receivers or establish that a source assertion is clinically authoritative. The future receiver must revalidate its explicit receive grant and connection state at acceptance. Its transaction boundary must evaluate the new deferred constraint before restoring tenant context, just as the existing lifecycle service does for its guards.
+
+The first proposed synthetic envelope is `fixture.ingress/1`: exactly schema, delivery UUID, event type, synthetic source UUID and nullable occurrence time. Only manifest-class event vocabulary is allowed; no free text, contact fields, amounts, patient links or internal decisions. Known times require an offset and normalize to UTC; unknown time stays null. Duplicate JSON keys, unknown fields, malformed/oversize bodies and caller authority fields are rejected. Canonical semantic hashes ignore transport whitespace and equivalent timezone representations; original byte digest stays separate. This is a fixture input contract, not an adapter-complete payload or real patient record format.
+
+Replay encryption uses the already-installed cryptography Fernet implementation. The encrypted body binds receipt UUID, practice UUID and semantic digest to the envelope. `INTEGRATION_REPLAY_KEYS` and `INTEGRATION_REPLAY_KEY_VERSION` are explicit Django settings supplied only by isolated tests in this increment; no environment loader or default key is introduced. No fallback to SECRET_KEY. Missing/wrong/removed keys, tampering and swapped bindings fail closed. Retaining an older key permits decryption after selecting a new write key. This is not a production key-management or recovery implementation.
+
+## Verification and limits
+
+The initial focused run passed 35 cases. Four additional tests cover each foreign-practice parent reference and empty tenant context; the broad run passed 397 cases with one outdated four-table inventory assertion. That assertion now requires all six tables by name with both RLS flags; the final entire integration suite passed 117 cases, zero skips/failures. The broader suite was not rerun after this test-only fix. Exact evidence is recorded in PROJECT_STATE. Tests also cover duplicate receipt uniqueness, atomic receipt/work pairing, immutable evidence, forced RLS, input normalization/authority denial, encryption tampering/binding/rotation, and continued denial of event submission with existing probe credentials.
+
+Migration generation initially warned that the isolated runner's default database was absent. A later manage.py drift attempt found no changes but warned about database authentication because that legacy entry point forces production settings. No saved database was involved. The clean repeat used `python -m django makemigrations --check --dry-run` with SQLite test settings and passed without that warning. Restricted PostgreSQL tests apply real migrations; SQLite drift is not RLS evidence.
+
+Historical storage-only checkpoint (superseded by the acceptance and retention reports): pending at that point were versioned receive grants/manifests and API authentication, transactional idempotent accept/replay/conflict handling, immutable safe conflict audit, commit-failure and concurrency tests, explicit expiry/purge/tombstone and key configuration, upgrade fingerprints and normal persistent-database restart, full compatibility/package/documentation checks, hosted checks after publication approval and independent review. There is no success acknowledgment to test yet. No live vendor, patient linkage, canonical projection, financial write, worker, UI or browser acceptance is claimed. Do not use these primitives with real payloads or saved practices.
+
+Current local behavior is described in [acceptance](phase2b-acceptance.md) and [retention](phase2b-retention.md). Neither report claims Phase 2B release approval.

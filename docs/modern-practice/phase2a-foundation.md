@@ -2,6 +2,8 @@
 
 This API-only foundation is published in PR #3 and awaiting review completion/merge. It does not receive events, connect vendors, create patients, or record money. Keep it disabled for saved practices and production. Frontend/backend ports remain 5181/8000.
 
+The local [Phase 2B acceptance increment](phase2b-acceptance.md) adds a separately disabled event receiver with new grants/manifests. Existing Phase 2A credentials retain their probe-only permissions.
+
 ## Configuration and identity
 
 The [environment reference](../reference/environment-variables.md#fictional-integration-foundation) documents the disabled-by-default feature flag, explicit TEST organization UUID allowlist and signed audience. Use only an isolated fictional database for acceptance work. A practice is selected solely from a verified credential; supplied organization selectors in body/query fields are rejected with 403, including matching values, and conflicting organization headers are rejected. JSON command bodies are limited to 16 KiB. These restrictions never grant access to an unallowlisted practice.

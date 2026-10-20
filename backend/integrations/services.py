@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 
 from integrations.authentication import issue_token, token_digest
-from integrations.manifests import MANIFESTS, digest
+from integrations.manifests import ALL_MANIFESTS, digest
 from integrations.models import IntegrationAuditEvent as Audit
 from integrations.models import IntegrationConnection as Connection
 from integrations.models import IntegrationCredential as Credential
@@ -144,7 +144,7 @@ def command(profile, kind, data, connection_id=None, credential_id=None):
             ).first()
             if not namespace:
                 raise NotFound()
-            selected = MANIFESTS[data["manifest_id"]]
+            selected = ALL_MANIFESTS[data["manifest_id"]]
             if namespace.provider_key != data["manifest_id"].split(":")[0]:
                 raise ValidationError("Manifest provider must match namespace.")
             if (
@@ -208,6 +208,11 @@ def command(profile, kind, data, connection_id=None, credential_id=None):
         elif kind == "issue":
             if conn.status != "active":
                 raise Conflict("Active connection required.")
+            if (
+                data["scopes"] == ["integration.receive"]
+                and conn.capabilities.get("ingress") != "fixture.ingress/1"
+            ):
+                raise ValidationError("Receive scope requires a receive manifest.")
             expires = data["expires_at"]
             if not now < expires <= now + timedelta(days=30):
                 raise ValidationError("Expiry must be in the next 30 days.")

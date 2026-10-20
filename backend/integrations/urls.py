@@ -1,6 +1,6 @@
 from django.urls import path
 
-from integrations.views import MetadataView, ProbeView
+from integrations.views import MetadataView, ProbeView, ReceiveView
 
 urlpatterns = [
     path("namespaces/", MetadataView.as_view(kind="namespace")),
@@ -18,4 +18,5 @@ urlpatterns = [
     ),
     path("connections/<uuid:connection_id>/audit/", MetadataView.as_view(kind="audit")),
     path("service/probe/", ProbeView.as_view()),
+    path("service/events/", ReceiveView.as_view()),
 ]

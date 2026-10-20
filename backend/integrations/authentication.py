@@ -13,7 +13,7 @@ from django.core import signing
 from django.db import connection, transaction
 from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
 from integrations.models import IntegrationConnection, IntegrationCredential
 
@@ -100,7 +100,8 @@ def tenant_transaction(org_id):
                 guards = (
                     "mp_integration_namespace_audit_required, "
                     "mp_integration_connection_audit_required, "
-                    "mp_integration_credential_audit_required"
+                    "mp_integration_credential_audit_required, "
+                    "mp_ingress_pending_required"
                 )
                 with connection.cursor() as cursor:
                     cursor.execute(f"SET CONSTRAINTS {guards} IMMEDIATE")
@@ -131,7 +132,7 @@ class ServicePrincipal:
     is_anonymous: bool = False
 
 
-def resolve_service(raw, claims):
+def resolve_service(raw, claims, required_scope="integration.probe"):
     conn = (
         IntegrationConnection.objects.select_for_update()
         .filter(id=claims["connection"], org_id=claims["org"])
@@ -152,13 +153,18 @@ def resolve_service(raw, claims):
         or credential.revoked_at is not None
         or now >= credential.expires_at
         or (credential.retire_at is not None and now >= credential.retire_at)
-        or credential.scopes != ["integration.probe"]
+        or credential.scopes not in (["integration.probe"], ["integration.receive"])
         or not secrets.compare_digest(credential.token_digest, token_digest(raw))
         or credential.locator_key_version != claims["version"]
         or credential.expires_at
         != datetime.fromtimestamp(claims["exp"], dt_timezone.utc)
     ):
         raise AuthenticationFailed("Invalid integration credential.")
+    if credential.scopes != [required_scope] or (
+        required_scope == "integration.receive"
+        and conn.capabilities.get("ingress") != "fixture.ingress/1"
+    ):
+        raise PermissionDenied("Credential scope does not permit this action.")
     return conn, credential
 
 

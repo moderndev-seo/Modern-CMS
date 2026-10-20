@@ -168,3 +168,19 @@ class ProbeView(BoundedIntegrationView):
                 "permitted_action": "integration.probe",
             }
         )
+
+
+class ReceiveView(BoundedIntegrationView):
+    authentication_classes = [IntegrationAuthentication]
+    permission_classes = []
+    http_method_names = ["post"]
+
+    def post(self, request):
+        if not getattr(request, "integration_principal", None):
+            raise PermissionDenied()
+        from integrations.acceptance import accept_delivery
+
+        result, status = accept_delivery(
+            request.body, request.integration_connection, request.integration_credential
+        )
+        return Response(result, status=status)
