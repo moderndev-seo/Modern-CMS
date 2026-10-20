@@ -1,3 +1,13 @@
+# Phase 2B implementation published for review — October 20, 2026
+
+Under the owner's explicit publication approval, implementation commit `1fa2b1e197e40e2fa2589800ba5b9c8fd1f88d54` is published on `codex/integration-durable-acceptance-2b` in `moderndev-seo/Modern-CMS`, based on `9b61c4d8d217e8c2e40c2885b2505142749141fb`. Its tree `000830296dfcae65d2fbda795e12b7e84e7f0413` exactly matched the locally verified 35-file snapshot. This accompanying follow-up records publication only. The local public clone was synchronized by exact-tree comparison without resetting or changing working files; original private history/artifacts and saved demo records were preserved.
+
+Local final verification: 442 restricted PostgreSQL security passes with zero skips; 6,294 PostgreSQL compatibility passes with zero skips; SQLite 6,285 passes/nine database-specific skips, 88.77% coverage. Routing, backend lint/856-file formatting, migration drift, strict docs/reference checks, installed package and fictional migration/restart/key-lifecycle checks passed. See phase2b-validation.md and the preceding exact results for scope, warnings and durations.
+
+The review PR targets main from this branch. Its exact current head and hosted results must be read from GitHub, not inferred from local tests. Hosted validation and independent technical review remain pending at this snapshot; separate owner approval is required before merge. No merge, deployment, live provider, Phase 2C worker or patient/cash projection is authorized or claimed. Next work is resolving any review/CI findings on the published candidate, then obtaining separate merge approval. Preserve the fictional-only boundary and pending Group B/C policies.
+
+Publication was interrupted on October 19 when automatic approval review hit its usage limit; no commit/PR had been published at that point. The resumed October 20 exact-payload calls succeeded. Earlier incomplete tool calls were also rejected for lacking exact payloads; no rejection was bypassed. Earlier local/unpublished statements below are historical.
+
 # Phase 2B publication authorized — October 19, 2026
 
 The owner said "approved continue" after the retention/key lifecycle verification and publication gate. This authorizes committing/publishing the verified Phase 2B branch and opening its review pull request; separate independent review and owner merge approval remain required. No merge, deployment, live adapter or later phase is authorized by publication alone.
