@@ -119,3 +119,54 @@ class IntegrationAuditEvent(PracticeMetadata):
                 fields=["org", "request_id"], name="mp_integration_command_unique"
             )
         ]
+
+
+class IntegrationEventInbox(PracticeMetadata):
+    """Immutable delivery evidence; not a canonical patient observation."""
+
+    namespace = models.ForeignKey(ProviderNamespace, on_delete=models.PROTECT)
+    connection = models.ForeignKey(IntegrationConnection, on_delete=models.PROTECT)
+    credential = models.ForeignKey(IntegrationCredential, on_delete=models.PROTECT)
+    delivery_id = models.UUIDField()
+    schema_version = models.CharField(max_length=32, default="fixture.ingress/1")
+    manifest_digest = models.CharField(max_length=64)
+    authorization_generation = models.PositiveBigIntegerField()
+    semantic_digest = models.CharField(max_length=64)
+    transport_digest = models.CharField(max_length=64)
+    replay_key_version = models.CharField(max_length=32)
+    replay_ciphertext = models.TextField()
+    replay_retention_policy = models.CharField(max_length=32, default="fixture-24h-v1")
+    replay_purged_at = models.DateTimeField(null=True)
+
+    class Meta(PracticeMetadata.Meta):
+        db_table = "mp_integration_inbox"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["namespace", "delivery_id"],
+                name="mp_ingress_delivery_unique",
+            )
+        ]
+
+
+class IntegrationPendingWork(PracticeMetadata):
+    """Durable pending marker only; worker lease/state belongs to Phase 2C."""
+
+    inbox = models.OneToOneField(IntegrationEventInbox, on_delete=models.PROTECT)
+
+    class Meta(PracticeMetadata.Meta):
+        db_table = "mp_integration_pending"
+
+
+class IntegrationDeliveryConflict(PracticeMetadata):
+    inbox = models.ForeignKey(IntegrationEventInbox, on_delete=models.PROTECT)
+    credential = models.ForeignKey(IntegrationCredential, on_delete=models.PROTECT)
+    attempted_digest = models.CharField(max_length=64)
+
+    class Meta(PracticeMetadata.Meta):
+        db_table = "mp_integration_delivery_conflict"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["inbox", "credential", "attempted_digest"],
+                name="mp_ingress_conflict_unique",
+            )
+        ]

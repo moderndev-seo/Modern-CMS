@@ -144,3 +144,11 @@ Phase 2A is an opt-in testing foundation, not a live provider connection. Keep i
 | Variable | Default | Required | Purpose |
 | --- | --- | --- | --- |
 | `ADMIN_PASSWORD` | *(empty string)* | No, but leaving it unset is a real security gap | Read directly by the `create_default_admin` management command. An empty value doesn't mean "no password", the command falls back to the literal password `admin` and prints a warning. `create_default_admin` runs automatically on every Docker container start (`docker/backend/entrypoint.sh`, right after `migrate`), so an unset `ADMIN_PASSWORD` in a real deployment means the bootstrap Django superuser's password is the literal string `admin` until someone changes it. See [Management commands](management-commands.md#create_default_admin). |
+
+### Fictional receipt acceptance (Phase 2B, local development)
+
+| Variable | Default | Required | Description |
+| --- | --- | --- | --- |
+| `INTEGRATION_RECEIVE_ENABLED` | `false` | No | Separately enables fictional service event acceptance; foundation flag, TEST allowlist and explicit receive credential are still required. |
+| `INTEGRATION_REPLAY_KEY_VERSION` | *(empty)* | For new receipts | Version selecting a dedicated Fernet key from the replay keyring. No default or signing-key fallback. |
+| `INTEGRATION_REPLAY_KEYS_JSON` | `{}` | For new receipts | Secret JSON object mapping key version to Fernet key. Keep outside Git/logs. Preserve old keys while retained evidence needs decryption. Invalid JSON fails startup with a generic message. Production recovery/retention is not established by this fictional configuration. |

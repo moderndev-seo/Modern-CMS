@@ -1,3 +1,4 @@
+import json
 import os
 import warnings
 from datetime import timedelta
@@ -578,3 +579,17 @@ INTEGRATION_TEST_ORGS = tuple(
 INTEGRATION_AUDIENCE = os.environ.get(
     "INTEGRATION_AUDIENCE", "modern-practice-fictional-local"
 )
+
+# Fictional ingress remains separately disabled; never derive replay keys from SECRET_KEY.
+INTEGRATION_RECEIVE_ENABLED = (
+    os.environ.get("INTEGRATION_RECEIVE_ENABLED", "false").lower() == "true"
+)
+INTEGRATION_REPLAY_KEY_VERSION = os.environ.get("INTEGRATION_REPLAY_KEY_VERSION", "")
+try:
+    INTEGRATION_REPLAY_KEYS = json.loads(
+        os.environ.get("INTEGRATION_REPLAY_KEYS_JSON", "{}")
+    )
+    if not isinstance(INTEGRATION_REPLAY_KEYS, dict):
+        raise ValueError
+except (ValueError, TypeError):
+    raise ValueError("Invalid integration replay key configuration.") from None

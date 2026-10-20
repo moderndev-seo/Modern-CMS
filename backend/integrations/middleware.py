@@ -2,6 +2,7 @@
 
 import json
 
+from django.conf import settings
 from django.core.exceptions import RequestDataTooBig
 from django.db import transaction
 from django.http import JsonResponse
@@ -20,6 +21,7 @@ from integrations.monitoring import record_failure
 
 ROOT = "/api/integrations/v1/"
 PROBE = ROOT + "service/probe/"
+RECEIVE = ROOT + "service/events/"
 
 
 def response(detail, status):
@@ -60,7 +62,7 @@ def reject_unsigned_selectors(request):
                 key.lower() in TENANT_SELECTORS for key in data
             ):
                 return response("Organization selectors are not allowed.", 403)
-    except (ValueError, UnicodeError, RequestDataTooBig):
+    except (ValueError, UnicodeError, RecursionError, RequestDataTooBig):
         return response("Invalid command body.", 400)
     return None
 
@@ -81,8 +83,15 @@ class IntegrationContext:
             return self.get_response(request)
         if header and token_header:
             return response("Mixed credentials are not allowed.", 403)
-        if service and (request.path != PROBE or request.method != "GET"):
+        if service and (request.path, request.method) not in (
+            (PROBE, "GET"),
+            (RECEIVE, "POST"),
+        ):
             return response("This credential is not valid for this endpoint.", 403)
+        if request.path == RECEIVE and not getattr(
+            settings, "INTEGRATION_RECEIVE_ENABLED", False
+        ):
+            return response("Not found.", 404)
         if token_header:
             return response("Human session required.", 403)
         if not raw:
@@ -123,11 +132,18 @@ class IntegrationContext:
                 request.profile = None
                 request.integration_principal = None
                 if service:
-                    conn, credential = resolve_service(raw, claims)
+                    conn, credential = resolve_service(
+                        raw,
+                        claims,
+                        "integration.receive"
+                        if request.path == RECEIVE
+                        else "integration.probe",
+                    )
                     request.integration_principal = ServicePrincipal(
                         str(conn.id), str(credential.id)
                     )
                     request.integration_connection = conn
+                    request.integration_credential = credential
                 else:
                     profile = (
                         Profile.objects.select_for_update()
@@ -141,7 +157,7 @@ class IntegrationContext:
                         )
                         .first()
                     )
-                    if profile is None or request.path == PROBE:
+                    if profile is None or request.path in (PROBE, RECEIVE):
                         return response("Human practice administrator required.", 403)
                     request.profile = profile
                 request._integration_verified = True

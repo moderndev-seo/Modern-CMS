@@ -77,3 +77,16 @@ MANIFESTS = {
 def permits_observation(manifest_id, event_type):
     """Future authority declaration only; never grants an HTTP receive scope."""
     return event_type in MANIFESTS.get(manifest_id, {}).get("observations", ())
+
+
+# Receive-capable fixtures are new snapshots, never upgrades of existing grants.
+RECEIVE_MANIFESTS = {}
+for _adapter in ("fixture_a", "fixture_b"):
+    _key = f"{_adapter}:acquisition:ingress-v1"
+    RECEIVE_MANIFESTS[_key] = {
+        **manifest(f"{_adapter}:acquisition"),
+        "id": _key,
+        "version": "1.1",
+        "ingress": "fixture.ingress/1",
+    }
+ALL_MANIFESTS = {**MANIFESTS, **RECEIVE_MANIFESTS}
