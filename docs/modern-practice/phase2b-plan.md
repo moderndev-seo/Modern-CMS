@@ -1,6 +1,6 @@
 # Phase 2B — Durable acceptance implementation plan
 
-Status: local acceptance and retention increments after PR #3 merge, October 19, 2026. Inbox/pending/conflict schema, validation/encryption, explicit receive scope and transactional HTTP acceptance are implemented locally. No worker or domain projection exists. See [acceptance increment](phase2b-acceptance.md). See [storage increment](phase2b-storage.md). Baseline main: `9b61c4d8d217e8c2e40c2885b2505142749141fb`. Local branch: `codex/integration-durable-acceptance-2b`.
+Status: merged in [PR #4](https://github.com/moderndev-seo/Modern-CMS/pull/4) on October 20, 2026, commit `c8c96b97716e198b3c3445b83a7ddd2aac97a68b`. Durable fictional acceptance and retention are implemented. No worker or domain projection exists. See [current handoff](PROJECT_STATE.md), [acceptance increment](phase2b-acceptance.md) and [storage increment](phase2b-storage.md).
 
 See the [validation and acceptance evidence map](phase2b-validation.md) for release checks and review gates.
 
@@ -14,7 +14,7 @@ No original attribution, patient, contact, appointment, journey event, receipt, 
 
 ## Proposed implementation choices
 
-These are implementation choices, now partly implemented locally as described in the increment reports; they do not expand approved business policies:
+These are implementation choices delivered in the merged increment reports; they do not expand approved business policies:
 
 1. Add a versioned fictional ingress capability and explicit receive scope. Do not modify immutable 1.0 manifest snapshots or silently widen already-issued credentials. New connection/credential selection is explicit; existing fixtures and probe behavior remain compatible.
 2. Add a practice-bound immutable inbox/delivery receipt carrying namespace, connection, issuer credential, delivery key, input schema/adapter versions, server receipt time, authorization generation, transport digest and semantic digest. Use a bounded unique namespace/delivery key so reconnects cannot silently duplicate the same source delivery; document why this key is transport identity, not patient or economic identity.
@@ -35,4 +35,4 @@ These are implementation choices, now partly implemented locally as described in
 - Fictional migration upgrade and normal persistent test-container restart: old snapshots unchanged, accepted receipts and pending work survive. No demo volume operations.
 - Exact test routing, lint/format, migration drift, compatibility, package and documentation checks; fresh hosted evidence only after separately authorized publication. Review all newly surfaced findings before proposing merge.
 
-Next task: complete full compatibility checks and requirements/independent review; retention migration/restart, fictional key lifecycle and package verification have passed locally. [Retention increment](phase2b-retention.md) implements a fictional 24-hour window and bounded operator purge with permanent receipt identity. Phase 2B is not release-approved. Phase 2C workers, 2D review/health and 2E two-adapter conformance remain subsequent increments.
+Next task: Phase 2C workers/recovery, followed by 2D review/health and 2E two-adapter conformance under their separate scopes. [Retention increment](phase2b-retention.md) implements a fictional 24-hour window and bounded operator purge with permanent receipt identity. Phase 2B is merged, not approved for production; see the current handoff for hosted validation and merge evidence.
