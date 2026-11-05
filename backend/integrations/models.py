@@ -170,3 +170,95 @@ class IntegrationDeliveryConflict(PracticeMetadata):
                 name="mp_ingress_conflict_unique",
             )
         ]
+
+
+class IntegrationProcessingWork(PracticeMetadata):
+    """Mutable scheduling companion; never replaces durable receipt evidence."""
+
+    pending = models.OneToOneField(IntegrationPendingWork, on_delete=models.PROTECT)
+    state = models.CharField(max_length=24, default="accepted")
+    next_attempt_at = models.DateTimeField(default=timezone.now)
+    attempt_count = models.PositiveIntegerField(default=0)
+    lease_token = models.UUIDField(null=True)
+    lease_expires_at = models.DateTimeField(null=True)
+    reason_code = models.CharField(max_length=32, default="")
+
+    class Meta(PracticeMetadata.Meta):
+        db_table = "mp_integration_work"
+        indexes = [models.Index(fields=["org", "state", "next_attempt_at"])]
+
+
+class IntegrationProcessingAttempt(PracticeMetadata):
+    """Append-only claim evidence; completion is a later processing concern."""
+
+    work = models.ForeignKey(IntegrationProcessingWork, on_delete=models.PROTECT)
+    number = models.PositiveIntegerField()
+    lease_token = models.UUIDField(unique=True)
+    lease_expires_at = models.DateTimeField()
+
+    class Meta(PracticeMetadata.Meta):
+        db_table = "mp_integration_attempt"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["work", "number"], name="mp_processing_attempt_unique"
+            )
+        ]
+
+
+class IntegrationObservation(PracticeMetadata):
+    """Immutable fictional observation, not a patient link or verified outcome."""
+
+    work = models.OneToOneField(IntegrationProcessingWork, on_delete=models.PROTECT)
+    lease_token = models.UUIDField()
+    mapping_version = models.CharField(max_length=32, default="fixture.normalized/1")
+    event_type = models.CharField(max_length=64)
+    source_id = models.UUIDField()
+    occurred_at = models.DateTimeField(null=True)
+    semantic_digest = models.CharField(max_length=64)
+
+    class Meta(PracticeMetadata.Meta):
+        db_table = "mp_integration_observation"
+
+
+class IntegrationStreamPage(PracticeMetadata):
+    """Immutable fictional page accepted only after all its receipts persist."""
+
+    connection = models.ForeignKey(IntegrationConnection, on_delete=models.PROTECT)
+    stream = models.CharField(max_length=32, default="acquisition")
+    position = models.PositiveBigIntegerField(default=1)
+    cursor = models.UUIDField()
+    previous_cursor = models.UUIDField(null=True)
+    receipt_ids = models.JSONField()
+    authorization_generation = models.PositiveBigIntegerField()
+
+    class Meta(PracticeMetadata.Meta):
+        db_table = "mp_integration_stream_page"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["connection", "stream", "position"],
+                name="mp_stream_position_unique",
+            ),
+            models.UniqueConstraint(
+                fields=["connection", "stream", "cursor"],
+                name="mp_stream_cursor_unique",
+            ),
+            models.UniqueConstraint(
+                fields=["connection", "stream", "previous_cursor"],
+                name="mp_stream_successor_unique",
+            ),
+            models.UniqueConstraint(
+                fields=["connection", "stream"],
+                condition=models.Q(previous_cursor__isnull=True),
+                name="mp_stream_root_unique",
+            ),
+        ]
+
+
+class IntegrationAppliedPrefix(PracticeMetadata):
+    """Verified acquisition prefix cache over immutable pages and observations."""
+
+    connection = models.OneToOneField(IntegrationConnection, on_delete=models.PROTECT)
+    position = models.PositiveBigIntegerField(default=0)
+
+    class Meta(PracticeMetadata.Meta):
+        db_table = "mp_integration_applied_prefix"

@@ -24,6 +24,10 @@ app.autodiscover_tasks(related_name="celery_tasks")  # tasks app uses celery_tas
 
 # Celery Beat Schedule for recurring tasks
 app.conf.beat_schedule = {
+    "dispatch-fictional-integrations": {
+        "task": "integrations.tasks.dispatch_practices",
+        "schedule": crontab(minute="*"),
+    },
     # Generate invoices from recurring invoice templates - daily at midnight
     "generate-recurring-invoices": {
         "task": "invoices.tasks.generate_recurring_invoices",

@@ -282,6 +282,11 @@ def test_db_forced_rls_and_foreign_link(admin_client, registry, org_b, profile_b
             ("mp_integration_inbox", True, True),
             ("mp_integration_pending", True, True),
             ("mp_integration_delivery_conflict", True, True),
+            ("mp_integration_stream_page", True, True),
+            ("mp_integration_applied_prefix", True, True),
+            ("mp_integration_observation", True, True),
+            ("mp_integration_work", True, True),
+            ("mp_integration_attempt", True, True),
         }
     with rls_org(org_b):
         assert not Connection.objects.filter(id=registry).exists()

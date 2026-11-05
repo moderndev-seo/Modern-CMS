@@ -593,3 +593,8 @@ try:
         raise ValueError
 except (ValueError, TypeError):
     raise ValueError("Invalid integration replay key configuration.") from None
+
+# Fictional processing requires the foundation flag and TEST practice allowlist.
+INTEGRATION_PROCESSING_ENABLED = (
+    os.environ.get("INTEGRATION_PROCESSING_ENABLED", "false").lower() == "true"
+)

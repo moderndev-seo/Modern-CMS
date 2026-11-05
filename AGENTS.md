@@ -1,10 +1,33 @@
 # Modern Practice CRM continuity
 
+> **Local November 5 update:** Phase 2C storage and scheduling development is underway on
+> `codex/phase-2c-processing`; see PROJECT_STATE for the implementation,
+> test evidence and limits. Bounded internal claims/retries/recovery are tested;
+> fictional normalization and task execution now pass isolated worker tests.
+> Local progress checkpoints and five scoped Redis worker-kill boundaries pass,
+> including rollback during an uncommitted observation and dispatcher recovery.
+> An isolated normal PostgreSQL restart preserves and resumes integration state.
+> Fictional durable page cursors and resumable applied-prefix tracking are implemented;
+> An independent agent review found one lease-transition storage gap, now fixed
+> and re-reviewed. Source coverage and remaining release acceptance are incomplete.
+> The October checkpoint below describes the merged baseline.
+
 > **Current checkpoint — October 20, 2026:** Phase 2B is merged in PR #4 at `c8c96b97716e198b3c3445b83a7ddd2aac97a68b`. All seven pre-merge checks passed on `7afa53cbbf6ee0c652ba13806fb70111319f529b`. Phase 2C is next and has not started. Architecture 0.2.0 and approved A01–A10 remain unchanged; Group B/C remain pending. No deployment or live-provider connection is implied. See PROJECT_STATE for evidence and current scope; older status snapshots below are historical.
 
 Read [the universal journey index](docs/modern-practice/universal-journey/README.md), decision register J and roadmap I before integration work. The accepted architecture is a specification; preserve existing patient permissions and financial safeguards until a separately reviewed implementation changes them.
 
 When resuming project development, read `docs/modern-practice/PROJECT_STATE.md` first. It records the objective, current milestone, verified baseline, limitations and proposed next work. Use `README.md` and `docs/modern-practice/team-setup.md` for installation and checks; consult milestone documents for the relevant feature history.
+
+## Current commit and feature-branch push authorization
+
+The owner’s November 5 request to continue and commit authorizes local commits
+for this Phase 2C work. Commit validated increments and record their evidence.
+The owner’s subsequent November 5 "push and continue" authorizes pushing this
+feature branch. The subsequent request to continue the proposed PR/readiness review authorized
+PR #6. Merge and deployment remain separate. Local Git
+authentication was restored and the feature branch was pushed November 5; see
+PROJECT_STATE for publication evidence.
+This supersedes the earlier requirement to leave this implementation uncommitted.
 
 ## Standing project requirements
 

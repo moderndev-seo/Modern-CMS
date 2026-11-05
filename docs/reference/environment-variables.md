@@ -152,3 +152,9 @@ Phase 2A is an opt-in testing foundation, not a live provider connection. Keep i
 | `INTEGRATION_RECEIVE_ENABLED` | `false` | No | Separately enables fictional service event acceptance; foundation flag, TEST allowlist and explicit receive credential are still required. |
 | `INTEGRATION_REPLAY_KEY_VERSION` | *(empty)* | For new receipts | Version selecting a dedicated Fernet key from the replay keyring. No default or signing-key fallback. |
 | `INTEGRATION_REPLAY_KEYS_JSON` | `{}` | For new receipts | Secret JSON object mapping key version to Fernet key. Keep outside Git/logs. Preserve old keys while retained evidence needs decryption. Invalid JSON fails startup with a generic message. Production recovery/retention is not established by this fictional configuration. |
+
+### Fictional processing (Phase 2C, isolated development)
+
+| Variable | Default | Required | Description |
+| --- | --- | --- | --- |
+| `INTEGRATION_PROCESSING_ENABLED` | `false` | No | Enables bounded fictional scheduling and shadow observations. Requires the foundation flag, TEST practice allowlist and retained replay keys. Celery Beat dispatches once per minute; each practice job handles at most 25 records. No patient linking, clinical verification or cash posting. Keep disabled outside explicitly configured fictional environments. |

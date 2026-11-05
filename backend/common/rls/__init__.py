@@ -32,6 +32,11 @@ INSERT_POLICY = "org_insert_check"
 # NOTE: Only include tables that have an org_id column directly
 # Table names must match actual PostgreSQL table names (check via \dt)
 ORG_SCOPED_TABLES = [
+    "mp_integration_stream_page",
+    "mp_integration_applied_prefix",
+    "mp_integration_observation",
+    "mp_integration_work",
+    "mp_integration_attempt",
     "mp_integration_namespace",
     "mp_integration_connection",
     "mp_integration_credential",
