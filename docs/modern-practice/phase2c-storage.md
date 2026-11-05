@@ -130,10 +130,31 @@ DBNAME=mp_local_checks python -m pytest integrations/tests/rehearsal_redis.py \
 
 Run inside the local Compose backend where `redis` resolves. This file is not
 part of default `test_*.py` discovery. The drill proves redispatch/sweeper recovery
-from worker death; it does not prove Redis durability, database-server restart,
-backup restoration, every enqueue failure or production disaster recovery.
+from worker death; it does not prove Redis durability, backup restoration,
+every enqueue failure or production disaster recovery.
 
 Remaining Phase 2C work includes source coverage evidence, remaining
 restart/boundary acceptance and broader acceptance checks. The November 5
 independent agent review is recorded above; external release approval is separate.
 No Phase 2C completion, real-provider attribution or production readiness claim.
+
+## Isolated normal PostgreSQL restart
+
+`integrations/tests/rehearsal_database.py` is an explicit, host-coordinated test,
+not part of default discovery. It requires a disposable `mp-restart-*` DB host,
+a restricted application role with a precreated `test_*` database, migrations,
+and a unique `MP_RESTART_GATE` path inside the backend container. Never point it
+at the ordinary demo database.
+
+Run pytest with `--ds=crm.test_settings_postgres --migrations --no-cov --reuse-db`.
+When `<gate>.ready` appears, restart only the disposable PostgreSQL container,
+wait for restricted-role connectivity, and create `<gate>.resume`. The test waits
+at most 90 seconds and checks that PostgreSQL's actual server start time changed.
+Use a fresh gate on every run. Stop the owned disposable container afterward;
+never delete demo volumes or include its test data in a commit.
+
+The test compares seven integration tables across restart, preserves the applied
+page prefix, resumes an existing claim and processes the remaining accepted
+receipt without duplicate observations. This normal-server-restart evidence is
+separate from the worker-kill rehearsal and does not establish crash/backup or
+production recovery readiness. November 5 result: one test passed, zero skips.

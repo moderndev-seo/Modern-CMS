@@ -6,6 +6,7 @@
 > fictional normalization and task execution now pass isolated worker tests.
 > Local progress checkpoints and five scoped Redis worker-kill boundaries pass,
 > including rollback during an uncommitted observation and dispatcher recovery.
+> An isolated normal PostgreSQL restart preserves and resumes integration state.
 > Fictional durable page cursors and resumable applied-prefix tracking are implemented;
 > An independent agent review found one lease-transition storage gap, now fixed
 > and re-reviewed. Source coverage and remaining release acceptance are incomplete.

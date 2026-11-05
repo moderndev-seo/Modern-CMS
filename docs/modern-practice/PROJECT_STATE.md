@@ -1,3 +1,36 @@
+# Phase 2C isolated database restart — November 5, 2026
+
+Committed the validated Phase 2C implementation as **2946416** on
+`codex/phase-2c-processing`, following the owner's request for local commits.
+Nothing was pushed. Local commits are now authorized for validated increments;
+publication/merge/deployment still require separate approval.
+
+Added explicit `integrations/tests/rehearsal_database.py`. On a new disposable
+PostgreSQL 16 container with no host ports or demo volumes, the restricted
+crm_user role ran migrations into test_mp_restart. The test committed an applied
+observation/page prefix, an active claim, and another accepted receipt without
+work. It closed its connection, signaled readiness, and waited while the host
+restarted only that isolated database container. The test verifies the server
+start time changed, then compares all rows in seven integration tables before
+and after restart in memory. No row dumps or credentials enter gate files.
+
+The persisted claim applies successfully, the remaining receipt is processed,
+and a duplicate processing pass creates no additional observation. Three accepted
+receipts end with three observations and three attempts. Page checkpoints retain
+and resume their verified progress. **1 passed**, zero skips, one inherited email
+warning, **46.46 seconds**, including clean migration setup and restart waiting.
+Ruff lint, all 52 integration files' formatting and Git whitespace checks pass.
+No application or schema changes; full security tests were not repeated for this
+explicit rehearsal-only increment.
+
+The owned container mp-restart-20261105 was stopped after the successful run;
+its test data is retained locally. No Docker volume was deleted, no saved-demo
+database was restarted, and no live services were used. This proves normal
+PostgreSQL restart persistence, not crash durability, backup restoration or
+actual Redis outage recovery. Remaining Phase 2C gaps include those additional
+failure boundaries as applicable, source coverage evidence and operational
+monitoring. Phase 2C is not declared complete.
+
 # Phase 2C local commit checkpoint — November 5, 2026
 
 The owner requested continued work and commits. The validated implementation,
