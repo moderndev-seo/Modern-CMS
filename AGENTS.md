@@ -23,7 +23,8 @@ When resuming project development, read `docs/modern-practice/PROJECT_STATE.md` 
 The owner’s November 5 request to continue and commit authorizes local commits
 for this Phase 2C work. Commit validated increments and record their evidence.
 The owner’s subsequent November 5 "push and continue" authorizes pushing this
-feature branch. PR publication, merge and deployment remain separate. Local Git
+feature branch. The subsequent request to continue the proposed PR/readiness review authorized
+PR #6. Merge and deployment remain separate. Local Git
 authentication was restored and the feature branch was pushed November 5; see
 PROJECT_STATE for publication evidence.
 This supersedes the earlier requirement to leave this implementation uncommitted.
