@@ -18,11 +18,14 @@ Read [the universal journey index](docs/modern-practice/universal-journey/README
 
 When resuming project development, read `docs/modern-practice/PROJECT_STATE.md` first. It records the objective, current milestone, verified baseline, limitations and proposed next work. Use `README.md` and `docs/modern-practice/team-setup.md` for installation and checks; consult milestone documents for the relevant feature history.
 
-## Current local commit authorization
+## Current commit and feature-branch push authorization
 
 The owner’s November 5 request to continue and commit authorizes local commits
 for this Phase 2C work. Commit validated increments and record their evidence.
-GitHub push, PR publication, merge and deployment still require separate approval.
+The owner’s subsequent November 5 "push and continue" authorizes pushing this
+feature branch. PR publication, merge and deployment remain separate. Local Git
+authentication was unavailable on the first push attempt; do not treat that as
+a lack of owner authorization.
 This supersedes the earlier requirement to leave this implementation uncommitted.
 
 ## Standing project requirements

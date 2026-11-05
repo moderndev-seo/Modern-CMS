@@ -1,3 +1,35 @@
+# Phase 2C real broker unavailability and push status — November 5, 2026
+
+The owner authorized pushing the feature branch and continuing. Remote inspection
+confirmed origin is moderndev-seo/Modern-CMS, main is ee6f794, and the feature
+branch did not yet exist remotely. `git push -u origin codex/phase-2c-processing`
+failed because local HTTPS Git credentials were unavailable. The configured
+osxkeychain helper supplied no credentials; gh is absent, and SSH strict host-key
+verification could not proceed with no known GitHub host key. No trust checks
+were bypassed and no credentials were requested in chat. The owner was asked to
+authenticate their local Git client. Push authorization persists; authentication
+is the blocker. Local commits 2946416 and 9af4164 remain intact and unpushed.
+
+Added explicit `integrations/tests/rehearsal_broker.py`. A dedicated stopped
+mp-broker-* Redis container causes a real transport failure (no mocked publish
+exception). The periodic dispatcher reports failure without creating work or
+observations. After the host starts only that test broker and confirms readiness,
+a fresh worker receives dispatcher retries on a unique queue. Both recovery and
+duplicate jobs are consumed, leaving one applied observation and one attempt.
+
+Result: **1 passed**, zero skips, one inherited email warning, **28.58 seconds**.
+Ruff lint, all 53 integration files' formatting and Git whitespace checks pass.
+Application/schema unchanged; full security partition not rerun for this explicit
+rehearsal-only increment. The owned broker container was stopped after validation;
+no demo broker interruption, Redis flush or volume deletion occurred.
+
+This proves accepted-receipt recovery after publication fails while the broker
+is unavailable and later returns. It does not prove durability of already queued
+Redis messages, Redis persistence/replication, database crash durability or backup
+restoration. Source coverage and operational monitoring remain open; Phase 2C is
+not declared complete. This validated increment is committed locally pending the
+authorized push once Git authentication is available.
+
 # Phase 2C isolated database restart — November 5, 2026
 
 Committed the validated Phase 2C implementation as **2946416** on

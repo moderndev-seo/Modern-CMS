@@ -158,3 +158,20 @@ page prefix, resumes an existing claim and processes the remaining accepted
 receipt without duplicate observations. This normal-server-restart evidence is
 separate from the worker-kill rehearsal and does not establish crash/backup or
 production recovery readiness. November 5 result: one test passed, zero skips.
+
+## Isolated broker unavailability
+
+`integrations/tests/rehearsal_broker.py` is an explicit coordinated rehearsal.
+Set `MP_BROKER_URL` to a dedicated, stopped `mp-broker-*` Redis container and set
+a fresh `MP_BROKER_GATE` path. Run against the restricted isolated pytest database
+with `--ds=crm.test_settings_postgres --no-cov --reuse-db`. Do not use the demo
+broker. After `<gate>.ready` appears, start the owned broker, wait for Redis PING,
+then create `<gate>.resume` inside the backend container. Stop that broker after
+the run. Gate files contain only readiness markers; credentials are not written.
+
+The real dispatcher encounters a transport error, then recovers the durable
+receipt after connectivity returns. A dedicated child worker consumes recovery
+and duplicate dispatches, preserving one observation and one attempt. The queue
+route alone is overridden for isolation. This does not test preservation of
+already queued messages or Redis disk/replication durability. November 5 result:
+one test passed, zero skips.
