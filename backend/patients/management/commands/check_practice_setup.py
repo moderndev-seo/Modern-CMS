@@ -9,6 +9,13 @@ from django.db.migrations.executor import MigrationExecutor
 
 from common.rls import INSERT_POLICY, ISOLATION_POLICY, ORG_SCOPED_TABLES
 
+# Phase 2B migrations 0004/0007 use one FOR ALL policy with WITH CHECK.
+SINGLE_POLICY_TABLES = {
+    "mp_integration_inbox",
+    "mp_integration_pending",
+    "mp_integration_delivery_conflict",
+}
+
 LOCAL_EMAIL_BACKENDS = {
     "django.core.mail.backends.console.EmailBackend",
     "django.core.mail.backends.locmem.EmailBackend",
@@ -54,16 +61,21 @@ def inspect_setup():
         tables = {row[0]: row[1:] for row in cursor.fetchall()}
     for name in sorted(ORG_SCOPED_TABLES):
         state = tables.get(name)
+        required_policies = (
+            {"org_isolation"}
+            if name in SINGLE_POLICY_TABLES
+            else {ISOLATION_POLICY, INSERT_POLICY}
+        )
         passed = (
             state is not None
             and state[0]
             and state[1]
-            and {ISOLATION_POLICY, INSERT_POLICY}.issubset(state[2] or [])
+            and required_policies.issubset(state[2] or [])
         )
         record(
             f"rls:{name}",
             passed,
-            "Table must exist with enabled/forced RLS and both named tenant policies.",
+            "Table must exist with enabled/forced RLS and its expected named tenant policies.",
         )
     executor = MigrationExecutor(connection)
     pending = executor.migration_plan(executor.loader.graph.leaf_nodes())

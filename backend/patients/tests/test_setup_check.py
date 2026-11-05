@@ -96,3 +96,30 @@ def test_non_postgresql_fails_without_database_queries(local_setup):
         with pytest.raises(CommandError):
             call_command("check_practice_setup", stdout=StringIO())
     local_setup[0].execute.assert_not_called()
+
+
+@pytest.mark.parametrize("table", sorted(setup.SINGLE_POLICY_TABLES))
+@pytest.mark.parametrize(
+    "enabled,forced,policies,passes",
+    [
+        (True, True, ["org_isolation"], True),
+        (False, True, ["org_isolation"], False),
+        (True, False, ["org_isolation"], False),
+        (True, True, [], False),
+    ],
+)
+def test_phase2b_policy_names(
+    local_setup, monkeypatch, table, enabled, forced, policies, passes
+):
+    monkeypatch.setattr(setup, "ORG_SCOPED_TABLES", [table])
+    local_setup[0].fetchall.return_value = [(table, enabled, forced, policies)]
+    checks = setup.inspect_setup()
+    assert next(c for c in checks if c["check"] == f"rls:{table}")["passed"] is passes
+
+
+def test_single_policy_does_not_replace_legacy_requirements(local_setup):
+    local_setup[0].fetchall.return_value = [
+        ("mp_patient", True, True, ["org_isolation"])
+    ]
+    with pytest.raises(CommandError):
+        call_command("check_practice_setup", stdout=StringIO())

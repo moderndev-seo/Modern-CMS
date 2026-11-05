@@ -1,3 +1,371 @@
+# Phase 2C local commit checkpoint — November 5, 2026
+
+The owner requested continued work and commits. The validated implementation,
+independent review fix and five-boundary Redis rehearsal are now being captured
+as a local feature-branch commit. Earlier entries saying "uncommitted" describe
+their historical checkpoints. See Git history for the commit identifier.
+
+This checkpoint includes migrations 0010–0019, processing/task orchestration,
+fictional observations and resumable page checkpoints, regression tests, setup
+diagnostics and documentation. Latest evidence: 529 security tests passed;
+five real worker-kill/Redis redispatch cases passed; independent review finding
+fixed and re-reviewed. No private environment files, data exports or generated
+artifacts are included. Phase 2C is incomplete; remaining recovery acceptance is
+listed below. No push, merge, deployment or live-provider access is authorized.
+
+# Phase 2C expanded crash-boundary rehearsal — November 5, 2026
+
+Expanded the explicit Redis rehearsal from two to five worker-kill boundaries:
+before preparation, after preparation commits, after claim commits, after the
+observation INSERT but before commit, and after the applied result commits.
+The uncommitted case kills the child inside the atomic observation transaction;
+the fresh connection observes its rollback before recovery. All cases restart
+with a new worker process and verify recovery plus consumption of a duplicate
+job, with exactly one observation and the expected one or two claim attempts.
+
+Recovery now runs through the real practice dispatcher, with only the queue
+route overridden to target each isolated test queue. The accepted-receipt case
+first injects a publish exception before any worker starts, verifies no work or
+observation exists, then proves later dispatcher recovery. This tests a publish
+exception, not an actual broker outage. Worker SIGKILLs are real and affect only
+the disposable child processes created by the test. No saved-demo DB access or
+Redis flush; Redis database 15 and unique queues remain the test boundary.
+
+Validation: initial five-boundary expansion **5 passed**, one inherited warning,
+42.50 seconds. Final strengthened dispatcher/publication-failure run **5 passed**,
+zero skips, one inherited warning, **40.34 seconds**. Ruff lint, all 51 integration
+files' formatting and Git whitespace checks pass. Application code and schema
+were unchanged; the 529-test security result immediately below remains the last
+full partition run and was not repeated for this rehearsal-only increment.
+
+The [Phase 2C checkpoint](phase2c-storage.md) records the boundary matrix and
+expected durable states. Remaining acceptance includes isolated database-server
+restart/persistence, broader failure boundaries, source coverage evidence and
+operational monitoring. Redis durability, true broker outage, backup restore and
+production disaster recovery are not proven. Phase 2C remains incomplete.
+All changes are local/uncommitted, ordinary processing stays disabled, and no
+live provider or publication was enabled.
+
+# Phase 2C independent review and lease fix — November 5, 2026
+
+At the owner's request, a separate reviewer agent independently inspected the
+local Phase 2C implementation read-only. It identified one P2 database enforcement
+gap: a released claim could be restored with its old token/expiry through a direct
+storage update, despite the normal worker correctly rotating tokens. The
+restricted-role regression failed before the fix with `DID NOT RAISE
+IntegrityError`, confirming the finding.
+
+Additive migration 0019 requires a fresh attempt when entering processing,
+rejects active-claim replacement and prevents count changes on release. Existing
+unique immutable attempt evidence enforces fresh tokens. Four regressions cover
+restoration, active replacement, release-count tampering and stale-token apply
+rejection followed by successful fresh-claim application. The independent reviewer
+re-read the fix and confirmed the finding resolved; no additional confirmed
+defects were reported. This agent review is not external human release approval.
+Full [review record](phase2c-independent-review.md).
+
+Validation after correction:
+- Focused processing/storage tests: **38 passed**, one inherited warning, 4.95s.
+- Full restricted-role PostgreSQL partition: **529 passed, zero skips**,
+  6,294 deselected, 75 inherited email warnings, 56.13s.
+- Explicit Redis worker-kill/restart/duplicate-redispatch rehearsal: **2 passed**,
+  one inherited warning, 18.15s, using isolated test database/unique queues.
+- Strict documentation build/exclusion guards: **2 passed**, zero skips, one
+  inherited warning, 2.79s, with locked docs dependencies in a disposable container.
+- Ruff lint, integration formatting and Git whitespace checks passed.
+- Migration 0019 applied to local TEST demo; **202 table fingerprints across two
+  practices unchanged**. Model/migration drift absent; setup checks pass with
+  zero pending migrations. Docker was stopped on resume and was restarted
+  without volume deletion.
+
+Broader compatibility checks were not repeated for this isolated storage guard;
+prior results remain recorded below. No live services, commit, push or deployment.
+All changes remain local and uncommitted; ordinary processing stays disabled.
+Next: complete outstanding restart/commit/enqueue-boundary acceptance and source
+coverage evidence. Phase 2C remains incomplete; this review does not close those
+known scope gaps or operational monitoring requirements.
+
+# Phase 2C resumable applied-page progress — November 4, 2026
+
+Replaced the first-100-pages ceiling with a durable per-connection applied-prefix
+cache. Each internal `page_progress` call verifies at most 100 pages after its
+saved position and commits only the contiguous applied prefix. Repeated calls
+resume across larger backlogs; unfinished receipts still block progress.
+This operation now writes a verified cache rather than being read-only.
+`scan_complete` describes whether the examined batch reached the accepted head,
+not whether all receipts were applied. Source coverage remains unknown.
+
+Migrations 0017/0018 add the cache and forced-RLS guards. The database rejects
+nonzero initial positions, regression, identity changes, deletion, missing pages,
+steps over 100 pages and advancement over unapplied receipt references. Immutable
+pages and observations preserve the validity of previously verified progress.
+Concurrent scans serialize within a practice; rolled-back progress is retried.
+This supports durable acquisition processing without creating patient links or
+cash effects; it is fictional adapter evidence, not vendor-tested attribution.
+
+Validation:
+- Initial focused page suite: 15 passed, one inherited warning, 1.91 seconds.
+- Expanded full restricted PostgreSQL partition: **525 passed, zero skips**,
+  6,294 deselected, 75 inherited email warnings, 53.77 seconds. Includes 17 page
+  tests, with post-page-100 gaps and concurrent resumptions. The preceding run
+  had 524 passes and one failure from an incorrectly shaped expected catalog
+  tuple; the test expectation was corrected before this successful full run.
+- **All 17 documentation tests passed, zero skips**, one inherited warning,
+  3.99 seconds. Installed only the lockfile's docs dependency group in a
+  disposable container with read-only repository source and /tmp output. This
+  includes strict MkDocs builds and the previously skipped exclusion guards;
+  no dependencies were changed in the ordinary development containers.
+- Ruff lint, all 50 integration files' formatting, and Git whitespace checks pass.
+- Migrations 0017/0018 applied to the local TEST demo. Before/after comparison
+  preserved **200 existing table fingerprints across two practices**; the new
+  prefix table is empty. Setup checks pass with zero pending migrations, and
+  model/migration drift check reports no changes.
+
+The broader compatibility partition was not repeated for this isolated cache
+increment; its prior result and resolved docs-mount issue are recorded below.
+Ordinary processing configuration remains off. All changes remain local and
+uncommitted on `codex/phase-2c-processing`; no publication or live providers.
+
+Next: outstanding restart/boundary acceptance and source-coverage evidence,
+then independent review. No Phase 2C completion or production-readiness claim.
+
+# Phase 2C fictional durable page checkpoints — November 4, 2026
+
+Added immutable fictional acquisition pages with UUID cursors, predecessor links
+and durable receipt references. Ingestion cannot advance over missing receipts;
+the applied prefix stops at unfinished pages. PostgreSQL assigns page positions
+and enforces tenant/connection/generation authority, append order and immutable
+history. Identical cursor replay is idempotent; conflicting replay is rejected.
+Migrations 0015/0016 are additive and applied to the local fictional demo on
+container startup. No patient, attribution or cash projection is introduced.
+
+The progress read examines at most the first 100 pages and explicitly reports
+an incomplete scan beyond that bound. Scalable incremental applied-page tracking
+remains unfinished. Empty pages prove transport progress only; source coverage
+stays unknown. These fictional UUID tokens are not tested vendor cursors.
+
+Validation: **518 restricted-role PostgreSQL security tests passed**, zero skips,
+6,294 deselected, 75 inherited email warnings, 62.82 seconds. Includes 10 new page
+tests covering gaps, replay, ordering, tenant isolation, SQL guards, immutability,
+rollback and the explicit scan limit. The initial page run had nine passes and
+one fixture failure because a test hardcoded the old authorization generation;
+the corrected full run passed. Ruff lint and integration formatting pass.
+Model/migration drift check reports no changes; local setup checks pass with
+zero pending migrations. Ordinary processing remains disabled.
+
+The earlier compatibility attempt used the restricted role instead of CI's
+privileged compatibility role; its process result was unavailable after resume,
+and it is not counted as validation. Docker was stopped on resume and was
+restarted without deleting volumes. A corrected compatibility run uses postgres
+only in separate test_mp_compat; security evidence above uses the restricted
+application role in test_mp_local_checks.
+
+Corrected PostgreSQL compatibility result: **6,289 passed, one failed, four
+skipped, 518 deselected**, 31 warnings, 143.90 seconds. The sole failure was
+`test_docs_api_directory_exists`: the ordinary backend mount omits repository
+docs. Rerunning all documentation tests with a read-only full-repository mount
+and writable /tmp working directory produced **15 passed, two skipped**, one
+warning, 1.15 seconds. This resolves the directory failure and the two
+source-mount skips. The two remaining documentation-build checks require mkdocs,
+which is absent in this image; they remain unverified. The initial focused
+API-documentation rerun also passed all nine tests (1.08 seconds).
+
+Remaining: scalable applied-page progress, source coverage evidence, outstanding
+restart/boundary acceptance and independent review. Phase 2C remains incomplete.
+Changes are local and uncommitted; nothing published and no live provider enabled.
+
+# Phase 2C progress checkpoints and Redis fault rehearsal — November 3, 2026
+
+Added internal per-connection acquisition progress snapshots: accepted/applied/
+unresolved counts, latest accepted checkpoint and contiguous applied checkpoint.
+Unresolved receipts block the applied prefix even if later receipts finish.
+Source coverage remains unknown and provider cursor null; the current fictional
+contract supplies neither source page tokens nor expected inventory. This is
+local processing progress, not persisted provider cursor/coverage completion.
+
+Added an explicitly invoked Redis rehearsal file, outside default test filename
+patterns. It uses Redis database 15, unique queues, the isolated pytest database
+and child workers only. Worker SIGKILL before observation write is recovered by
+fresh-worker redispatch after lease expiry; SIGKILL after commit retains one
+observation without another attempt. Both cases verify that the restarted worker
+consumes the initial and duplicate replay jobs, exactly one observation remains,
+and claim history matches. The child-only two-second lease shortens the drill.
+No Redis flush or saved-demo database access. Details/command:
+[Phase 2C checkpoint](phase2c-storage.md).
+
+Validation: five new progress tests passed. The first combined progress/rehearsal
+run passed seven tests in 15.05 seconds. Strengthened replay-consumption assertions
+then passed both Redis tests in 16.82 seconds (one inherited email warning).
+**Full restricted-role PostgreSQL security partition: 508 passed, zero skips,
+6,294 compatibility tests deselected, 75 inherited email-backend warnings,
+44.43 seconds.** Command: `python -m pytest -m postgres_only
+--ds=crm.test_settings_postgres --migrations --no-cov --reuse-db -q`, with the
+isolated test database. The explicit Redis file is additional to that partition.
+Ruff lint and Git whitespace checks pass; no schema changes in this increment.
+
+This proves worker-process death and Redis redispatch recovery for the two
+recorded boundaries, not Redis persistence, database-server restart, backup
+restore, every enqueue fault, operational monitoring or production readiness.
+Remaining Phase 2C: source cursor/coverage contract, remaining restart/boundary
+acceptance, compatibility suites and independent review. Ordinary demo processing
+remains disabled; isolated tests enabled it. All implementation is still local
+and uncommitted on `codex/phase-2c-processing`; no publication or live provider.
+
+# Phase 2C fictional observation path — November 3, 2026
+
+Added immutable fictional acquisition observations, pinned normalization and
+atomic observation/applied-state writes. Migrations 0013/0014 add the protected
+observation table and enforce current lease/connection authority plus paired
+commit of result and state. Source UUIDs remain synthetic source references;
+no patient linking, clinical verification or money projection occurs.
+
+Added bounded Celery per-practice processing and a minute dispatcher. Processing
+is enabled in the isolated tests and defaults off in ordinary configuration.
+An enabled Celery test worker consumed a message from its dedicated in-memory
+queue and wrote the observation under restricted PostgreSQL. This is an actual
+asynchronous worker-thread test, not a Redis or separate-process recovery proof.
+The environment flag and limitations are documented in the environment reference
+and [Phase 2C notes](phase2c-storage.md).
+
+Final checks: **233 restricted PostgreSQL tests passed**, zero skips, 75
+inherited email-backend warnings, 23.87 seconds (all integration tests plus
+setup diagnostics). Includes 14 observation/task tests for duplicate/concurrent
+application, rollback/commit failure, revoked access, foreign practice denial,
+immutable observations, missing keys, bounded task retries/publication failure
+and enabled worker execution. **Six environment-reference checks passed** with
+zero skips, one inherited warning, 0.25 seconds in a disposable container with
+read-only source. Ruff lint and 41-file integration formatting passed.
+
+Validation corrections: generated/new test imports were sorted. The initial
+worker test correctly refused the inherited Redis broker; explicitly overriding
+the test process broker environment isolated it to memory. The first read-only
+documentation test container could not write its relative server.log; rerunning
+from writable /tmp with read-only source passed. Neither failed attempt counts
+as successful validation. Migrations 0013/0014 then applied successfully to the fictional demo. Setup
+checks pass with zero pending migrations; model/migration drift and Git
+whitespace checks pass. The ordinary demo processing flag remains off;
+processing was enabled and demonstrated in the isolated worker test.
+
+Remaining Phase 2C: stream cursors/coverage, Redis delivery and worker/process
+crash/restart drills, broader application/security verification and independent
+review. No end-to-end real-provider attribution or Phase 2C completion claim.
+Work remains local/uncommitted on `codex/phase-2c-processing`. No external
+services or production deployment were introduced.
+
+# Phase 2C bounded scheduling and recovery — November 3, 2026
+
+Continued local implementation on `codex/phase-2c-processing`. Added disabled
+internal scheduling functions for bounded companion creation, atomic lease and
+attempt claims, retry/backoff, and expired-lease recovery. Claims/retries recheck
+connection generation, active state, fictional manifest and retention. Stale
+lease tokens cannot release another claim. Separate Org locks preserve tenant
+independence. Migration 0012 requires matching complete claim history and
+prevents terminal/quarantined work reopening. See [scope and remaining work](phase2c-storage.md).
+
+Final restricted PostgreSQL verification: **219 passed, zero skips, 75 inherited
+email-backend deprecation warnings, 13.33 seconds**. Command: `python -m pytest
+integrations/tests patients/tests/test_setup_check.py --ds=crm.test_settings_postgres
+--no-cov --reuse-db -q`, with DBNAME selecting the isolated test database.
+Includes 19 scheduling tests: exclusive concurrent ownership, revocation winning
+a waiting claim, independence from another practice's lock, commit/attempt-write
+rollback, stale ownership, six-attempt ceiling, retention, bounded batches,
+context restoration and recovery after reconnect. Two added direct-SQL tests
+verify deferred claim-history enforcement and terminal-state protection.
+
+Failures retained: initial concurrent test used the wrong fixture argument and
+was fixed; first full run after 0012 had teardown errors because direct-SQL
+storage fixtures left deferred guards pending after tenant cleanup. They now
+explicitly validate constraints before restoring context, matching the service.
+A migration-drift check using the test DBNAME emitted a missing base-database
+warning (pytest uses its existing test-prefixed database); the normal local
+configuration is used for the final drift check.
+
+Docker Desktop had stopped between sessions. Restarted existing containers and
+volumes; the documented backend entrypoint automatically applied 0010/0011 to
+the fictional demo. The subsequent HTTP verification passed for both practices
+and retained the previous snapshot hash
+`b870d2ecabc1b6df75f2fac6d51bbd4d9ee654f1ac64c6492f0626ee1ea77403`.
+This verifies the smoke command's snapshot, not a complete database fingerprint.
+Migration 0012 then applied successfully to the fictional demo. Setup checks
+pass with zero pending migrations; final model/migration drift reports no changes.
+Ruff lint, 37-file integration formatting and Git whitespace checks pass.
+Processing remains disabled and unregistered with Celery.
+
+No normalization, canonical observations, applied effects, stream cursors,
+automatic dispatch/sweep, real-provider verification or Phase 2C completion is
+claimed. No full application/security partition, process-kill restart drill,
+independent review or publication. Next: pinned normalization and atomic shadow
+observations with final authority/lease rechecks, then durable worker dispatch
+and coverage. All work remains local/uncommitted; no live services connected.
+
+# Phase 2C first storage increment — November 2, 2026
+
+The owner's continuation instruction follows the local setup and authorizes
+continued local Phase 2C development. Added scheduling companions and immutable
+claim records, additive migrations 0010/0011, forced RLS, same-practice parent
+checks and bounded row-shape guards. Existing receipt/pending markers remain
+unchanged. Details and remaining invariants: [Phase 2C storage](phase2c-storage.md).
+
+Targeted restricted PostgreSQL tests: 76 passed, zero skips, 75 inherited
+email-backend deprecation warnings, 1.99 seconds. Includes 13 new storage tests,
+39 existing receipt storage tests and 24 setup diagnostic tests. Migrations ran
+only in the separate test database. Ruff lint/format and model/migration drift
+checks passed after fixing generated import ordering. Full integration suite:
+174 passed, zero skips, one inherited email-backend deprecation warning,
+11.34 seconds (`pytest integrations/tests --ds=crm.test_settings_postgres
+--no-cov --reuse-db -q`). Initial full run had 173 passes and one failure because
+the exact RLS catalog inventory omitted the two new protected tables; updated
+that explicit inventory and reran successfully. No full application suite, migration/restart preservation
+rehearsal, browser rerun, independent review or publication performed.
+
+The running demo has not received these migrations. No worker, normalization,
+lease/retry service, sweeper or cursor exists yet; this is not Phase 2C completion.
+Next implement transactional claiming/recovery and its concurrency/authorization
+acceptance before dispatching any work. Changes remain uncommitted on
+`codex/phase-2c-processing`; preserve the prior local setup fix in this branch.
+
+# Local development resumed — November 2, 2026
+
+The owner requested continuation in the new workspace. Public main was cloned at
+`ee6f794afff43f1c3495e0f06603574b027abb99` and local branch
+`codex/phase-2c-processing` created. PR #5 is merged; its older open-status
+entries below are historical. Work remains local and uncommitted.
+
+Docker Desktop was available outside shell PATH. Built the locked development
+images and started Compose project `modern-cms-local` with fresh persistent
+volumes, ports 5181/8000, PostgreSQL and Redis. Private generated configuration
+is gitignored. Seeded only the documented fictional practices, messages and
+reviews. Migrations completed; Django system checks pass. Full documented HTTP
+verification passed for both practices, including sixteen authenticated routes
+per practice, receipt reconciliation and cross-practice denial checks. Harbor
+reports USD 1,100 net collected and Cedar USD 700 for September 2026.
+
+Fixed a pre-existing setup diagnostic mismatch: Phase 2B's inbox, pending and
+conflict tables use `org_isolation` FOR ALL with WITH CHECK, while the diagnostic
+required the older two policy names. The checker now uses the migration-defined
+names for those three tables, still requiring enabled and forced RLS. Existing
+table requirements remain unchanged. No database policy or migration changed.
+The corrected live setup check passes with zero pending migrations. This checks
+catalog names/flags, not policy semantics or full security coverage.
+
+Initial validation ran before migrations finished and failed; a later run
+isolated the policy-name mismatch. The first HTTP verification lacked optional
+review fixtures; the documented messages/reviews seeds resolved that failure.
+The first unit-test invocation incorrectly used SQLite; repository routing
+requires PostgreSQL for the entire patients test directory. The filtered SQLite
+retry selected zero tests and is not a pass. Final restricted-role PostgreSQL run: 24 passed, zero skips, 75 inherited
+email-backend deprecation warnings, 22.89 seconds. Command: `python -m pytest
+patients/tests/test_setup_check.py --ds=crm.test_settings_postgres --no-cov
+--reuse-db -q`, with a separate test database. Changed-file Ruff lint/format and
+Git whitespace checks passed. Full application/security suites and browser
+visual review were not run for this diagnostic correction.
+
+Phase 2C application implementation has not started. Next: companion durable
+work state and attempt records preserving immutable 2B pending markers, then
+bounded leases/recovery, pinned normalization, generation checks and stream
+coverage. Follow roadmap I and D/G invariants; use isolated fictional tests.
+Publication, merge and live services remain outside this local increment.
+
 # PR #5 review corrections — October 20, 2026
 
 The owner instructed continuation of the published handoff correction. Automated review of `b75cd4bafe5dbe9c4e252b6a176644329faaafa8` identified two valid documentation inconsistencies: stale current-status banners on the mandatory architecture reading path and a roadmap 2B schema row incorrectly including deferred attempts/canonical observations. Corrected all matching architecture banners to defer to this handoff, clarified the historical index/publication baseline, updated the post-audit next step to 2C, and reconciled the 2B/2C rows with the delivered boundary documented in phase2b-validation.md. No architecture version, approved decision, application code or schema changed.
